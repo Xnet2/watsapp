@@ -433,7 +433,7 @@
 
     <label for="extInput">מספר שלוחה</label>
     <input type="text" id="extInput" placeholder="1" dir="ltr" value="1">
-    <div class="hint">הנתיב שממנו יישלפו ההקלטות: ivr2:/&lt;שלוחה&gt;/. שלוש ההקלטות האחרונות ברשימה (הקלטות מערכת) מוסתרות אוטומטית. מספר שולח מזוהה אוטומטית כאשר שם הקובץ בפורמט Phone-...-Date-... (תלוי בהגדרות השלוחה), ובנוסף מנסים לזהות אותו משדה נוסף בתשובת השרת אם קיים כזה.</div>
+    <div class="hint">הנתיב שממנו יישלפו ההקלטות: ivr2:/&lt;שלוחה&gt;/. קבצים שאינם בפורמט של הקלטה אמיתית (כמו קבצי מערכת/תפריט בשמות שאינם המספר הרץ הרגיל) מסוננים אוטומטית ולא מוצגים. מספר שולח מזוהה אוטומטית כאשר שם הקובץ בפורמט Phone-...-Date-... (תלוי בהגדרות השלוחה), ובנוסף מנסים לזהות אותו משדה נוסף בתשובת השרת אם קיים כזה.</div>
 
     <label for="tzintukListInput">שליחת צינתוק לרשימה בהקלטה חדשה (אופציונלי)</label>
     <input type="text" id="tzintukListInput" placeholder="מספר/שם הרשימה, השאירו ריק לביטול" dir="ltr">
@@ -560,7 +560,6 @@ const LS_TOKEN = 'yemot_token';
 const LS_EXT = 'yemot_ext';
 const LS_TZINTUK_LIST = 'yemot_tzintuk_list';
 const LS_TZINTUK_CALLERID = 'yemot_tzintuk_callerid';
-const HIDE_LAST_N = 3;
 
 // ===== אנשי קשר - Google Sheets (דרך Apps Script Web App) =====
 const CONTACTS_API = 'https://sheetdb.io/api/v1/oihuitizk37d7';
@@ -1141,7 +1140,7 @@ async function fetchFileList(token, ext){
   const data = await res.json();
   if(data.responseStatus !== 'OK') throw new Error(data.message || data.responseStatus);
 
-  let files = (data.files || []).filter(f => f.fileType === 'AUDIO' || f.fileType === 'TTS');
+  let files = (data.files || []).filter(f => (f.fileType === 'AUDIO' || f.fileType === 'TTS') && isRealRecordingName(f.name));
   files.sort((a,b) => {
     const na = parseInt((a.name || '').match(/\d+/), 10);
     const nb = parseInt((b.name || '').match(/\d+/), 10);
@@ -1149,11 +1148,6 @@ async function fetchFileList(token, ext){
     return (a.name||'').localeCompare(b.name||'');
   });
 
-  if(files.length > HIDE_LAST_N){
-    files = files.slice(0, files.length - HIDE_LAST_N);
-  } else {
-    files = [];
-  }
   return files;
 }
 
