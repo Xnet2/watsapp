@@ -146,16 +146,18 @@
     width:2px;min-width:2px;border-radius:2px;background:#D1D7DB;flex-shrink:0;
   }
   .wf-bar.played{background:var(--accent);}
-  /* עיגול-מחוון (thumb) שיושב על הגל בנקודת ההשמעה הנוכחית, בדיוק כמו בוואטסאפ */
+  /* עיגול-מחוון (thumb) שיושב על הגל בנקודת ההשמעה הנוכחית, בדיוק כמו בוואטסאפ.
+     הפסים מסודרים RTL (הפס הראשון מימין), אז המחוון זז מימין (התחלה) לשמאל (סוף) לפי "right" ולא "left". */
   .wf-thumb{
     position:absolute;
     top:50%;
+    right:0;
     width:11px;height:11px;border-radius:50%;
     background:var(--accent);
     box-shadow:0 1px 2px rgba(0,0,0,.25);
     transform:translate(50%,-50%);
     pointer-events:none;
-    transition:left .05s linear;
+    transition:right .05s linear;
   }
   .rec-time{font-size:.7rem;color:var(--text-faint);flex-shrink:0;min-width:28px;text-align:left;}
 
@@ -572,7 +574,7 @@ async function uploadToCloudinary(file){
   const data = await res.json();
   return data.secure_url;
 }
-const BAR_COUNT = 40;
+const BAR_COUNT = 30;
 
 const listEl = document.getElementById('list');
 const extLabel = document.getElementById('extLabel');
@@ -586,6 +588,10 @@ let activeAudio = null;
 let activePlayBtn = null;
 let activeSetPlayed = null;
 let audioCtx = null;
+
+// מעקב אחרי שמות הקבצים שכבר מוצגים ברשימה, לצורך בדיקת רענון שקטה ברקע
+let renderedFileNames = new Set();
+let isPolling = false;
 
 function getToken(){ return localStorage.getItem(LS_TOKEN) || ''; }
 function getExt(){ return localStorage.getItem(LS_EXT) || '1'; }
@@ -1078,41 +1084,15 @@ function fmtTime(sec){
   return m + ':' + String(s).padStart(2,'0');
 }
 
-async function loadRecordings(){
-  const token = getToken();
-  const ext = getExt();
-  extLabel.textContent = 'שלוחה ' + ext;
-
-  if(!token){
-    setStatus('לחצו על הגדרות למעלה כדי להזין טוקן ומספר שלוחה.');
-    return;
-  }
-
-  setStatus('טוען הקלטות…');
-
+// שולף את רשימת הקבצים מהשרת, ממיין ומסנן את שלוש ההקלטות האחרונות (הקלטות מערכת).
+// משמש גם לטעינה הראשונית וגם לבדיקה השקטה של הקלטות חדשות.
+async function fetchFileList(token, ext){
   const url = BASE_URL + 'GetIVR2Dir?token=' + encodeURIComponent(token) + '&path=' + encodeURIComponent(extPath(ext));
-
-  let data;
-  try{
-    const res = await fetch(url);
-    data = await res.json();
-  }catch(err){
-    setStatus(
-      'שגיאה בטעינת ההקלטות.\n' +
-      'ייתכן שזו חסימת CORS של שרת ימות המשיח, או בעיית רשת.\n' +
-      'פרטים טכניים: ' + err.message,
-      true
-    );
-    return;
-  }
-
-  if(data.responseStatus !== 'OK'){
-    setStatus('שגיאה מהשרת: ' + (data.message || data.responseStatus), true);
-    return;
-  }
+  const res = await fetch(url);
+  const data = await res.json();
+  if(data.responseStatus !== 'OK') throw new Error(data.message || data.responseStatus);
 
   let files = (data.files || []).filter(f => f.fileType === 'AUDIO' || f.fileType === 'TTS');
-
   files.sort((a,b) => {
     const na = parseInt((a.name || '').match(/\d+/), 10);
     const nb = parseInt((b.name || '').match(/\d+/), 10);
@@ -1125,6 +1105,33 @@ async function loadRecordings(){
   } else {
     files = [];
   }
+  return files;
+}
+
+async function loadRecordings(){
+  const token = getToken();
+  const ext = getExt();
+  extLabel.textContent = 'שלוחה ' + ext;
+
+  if(!token){
+    setStatus('לחצו על הגדרות למעלה כדי להזין טוקן ומספר שלוחה.');
+    return;
+  }
+
+  setStatus('טוען הקלטות…');
+
+  let files;
+  try{
+    files = await fetchFileList(token, ext);
+  }catch(err){
+    setStatus(
+      'שגיאה בטעינת ההקלטות.\n' +
+      'ייתכן שזו חסימת CORS של שרת ימות המשיח, או בעיית רשת.\n' +
+      'פרטים טכניים: ' + err.message,
+      true
+    );
+    return;
+  }
 
   if(files.length === 0){
     setStatus('אין הקלטות להצגה בשלוחה ' + ext + '.');
@@ -1132,12 +1139,50 @@ async function loadRecordings(){
   }
 
   listEl.innerHTML = '';
+  renderedFileNames = new Set();
   for(const file of files){
     listEl.appendChild(buildRecItem(file, token, ext));
+    renderedFileNames.add(file.name);
   }
   // פתיחה בסוף הרשימה - ההקלטה האחרונה תמיד גלויה
   listEl.scrollTop = listEl.scrollHeight;
 }
+
+// בדיקה שקטה ברקע כל כמה שניות: אם יש הקלטות חדשות מוסיפים אותן בעדינות לסוף הרשימה,
+// בלי לרענן/לנקות את מה שכבר מוצג ובלי לקפוץ בגלילה - אלא אם המשתמש כבר היה בתחתית
+// הרשימה, ואז גוללים בעדינות כדי לחשוף את ההודעה החדשה.
+async function pollForNewRecordings(){
+  if(isPolling) return;
+  const token = getToken();
+  const ext = getExt();
+  if(!token) return;
+  if(listEl.querySelector('.status-line')) return; // עוד לא נטענה רשימה בהצלחה בפעם הראשונה
+
+  isPolling = true;
+  try{
+    const files = await fetchFileList(token, ext);
+    const newFiles = files.filter(f => !renderedFileNames.has(f.name));
+    if(newFiles.length === 0) return;
+
+    const wasAtBottom = (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) < 40;
+
+    for(const file of newFiles){
+      listEl.appendChild(buildRecItem(file, token, ext));
+      renderedFileNames.add(file.name);
+    }
+
+    if(wasAtBottom){
+      listEl.scrollTop = listEl.scrollHeight;
+    }
+  }catch(err){
+    // כשל שקט - לא מציגים שגיאה כדי לא להפריע לצפייה, פשוט מנסים שוב בבדיקה הבאה
+    console.warn('בדיקת הקלטות חדשות נכשלה:', err.message);
+  }finally{
+    isPolling = false;
+  }
+}
+
+setInterval(pollForNewRecordings, 8000);
 
 // ===== גל קול =====
 function getAudioCtx(){
@@ -1242,10 +1287,10 @@ function buildRecItem(file, token, ext){
     bars.push(bar);
   });
 
-  // עיגול-מחוון על גבי הגל, בדיוק כמו בוואטסאפ, שנע לפי אחוז ההשמעה
+  // עיגול-מחוון על גבי הגל, בדיוק כמו בוואטסאפ, שנע לפי אחוז ההשמעה (מימין לשמאל, כמו סדר הפסים)
   const thumb = document.createElement('div');
   thumb.className = 'wf-thumb';
-  thumb.style.left = '0%';
+  thumb.style.right = '0%';
   waveform.appendChild(thumb);
 
   function setPeaks(peaks){
@@ -1269,7 +1314,7 @@ function buildRecItem(file, token, ext){
         b.style.background = '';
       }
     });
-    thumb.style.left = (ratio*100) + '%';
+    thumb.style.right = (ratio*100) + '%';
   }
 
   const timeLabel = document.createElement('span');
@@ -1416,7 +1461,8 @@ function buildRecItem(file, token, ext){
     ensureAudio();
     if(!audio.duration) return;
     const rect = waveform.getBoundingClientRect();
-    const ratio = (e.clientX - rect.left) / rect.width;
+    // הפסים בסדר RTL (התחלה מימין), אז יחס ההשמעה נמדד מהקצה הימני ולא מהשמאלי
+    const ratio = 1 - ((e.clientX - rect.left) / rect.width);
     audio.currentTime = ratio * audio.duration;
     setPlayedRatio(ratio);
   };
@@ -1434,6 +1480,7 @@ function buildRecItem(file, token, ext){
       const data = await res.json();
       if(data.responseStatus === 'OK'){
         if(activeAudio === audio){ activeAudio = null; activePlayBtn = null; activeSetPlayed = null; }
+        renderedFileNames.delete(file.name);
         row.remove();
       } else {
         alert('שגיאה במחיקה: ' + (data.message || data.responseStatus));
