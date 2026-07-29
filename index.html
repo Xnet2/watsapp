@@ -266,6 +266,12 @@
   .rec-avatar img{width:100%;height:100%;object-fit:cover;}
   .rec-avatar svg{width:17px;height:17px;}
   .rec-name.contact-matched{color:var(--text);}
+  .me-toggle-row{
+    display:flex;align-items:center;gap:8px;margin-top:14px;cursor:pointer;
+    font-size:.82rem;color:var(--text-dim);font-weight:500;
+  }
+  .me-toggle-row input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
+  .me-toggle-row span{flex:1;}
   #fileInput{display:none;}
 </style>
 </head>
@@ -370,6 +376,11 @@
 
     <label for="contactPhoneInput">מספר טלפון</label>
     <input type="text" id="contactPhoneInput" placeholder="050-1234567" dir="ltr">
+
+    <label class="me-toggle-row" for="contactIsMeInput">
+      <input type="checkbox" id="contactIsMeInput">
+      <span>זה אני (ההודעות שלי יוצגו בצד שמאל)</span>
+    </label>
 
     <div class="btnrow">
       <button class="secondary danger-text" id="deleteContactBtn" style="display:none;">מחיקה</button>
@@ -503,7 +514,16 @@ const contactPhotoInput = document.getElementById('contactPhotoInput');
 const removePhotoBtn = document.getElementById('removePhotoBtn');
 const contactNameInput = document.getElementById('contactNameInput');
 const contactPhoneInput = document.getElementById('contactPhoneInput');
+const contactIsMeInput = document.getElementById('contactIsMeInput');
 const deleteContactBtn = document.getElementById('deleteContactBtn');
+
+// מזהה איש הקשר שמסומן כ"אני" - נשמר לכל טוקן בנפרד (העדפת תצוגה מקומית).
+function meContactKey(){ return 'yemot_me_contact:' + (getToken() || ''); }
+function getMeContactId(){ return localStorage.getItem(meContactKey()) || null; }
+function setMeContactId(id){
+  if(id) localStorage.setItem(meContactKey(), id);
+  else localStorage.removeItem(meContactKey());
+}
 
 // אנשי הקשר נטענים מהגיליון (לפי הטוקן) ומוחזקים בזיכרון בשביל רינדור מהיר וסינכרוני.
 let contactsCache = [];
@@ -647,6 +667,7 @@ function openContactEdit(id, prefillPhone){
   contactEditTitle.textContent = contact ? 'עריכת איש קשר' : 'איש קשר חדש';
   contactNameInput.value = contact ? contact.name || '' : '';
   contactPhoneInput.value = contact ? (contact.phone || '') : (prefillPhone || '');
+  contactIsMeInput.checked = contact ? (contact.id === getMeContactId()) : false;
   deleteContactBtn.style.display = contact ? '' : 'none';
   refreshAvatarPreview();
   closeContacts();
@@ -686,6 +707,7 @@ saveContactBtn.onclick = async () => {
   saveContactBtn.textContent = 'שומר…';
   try{
     await saveContactToServer(contact);
+    setMeContactId(contactIsMeInput.checked ? id : (getMeContactId() === id ? null : getMeContactId()));
     closeContactEdit();
     loadRecordings();
   }catch(err){
@@ -702,6 +724,7 @@ deleteContactBtn.onclick = async () => {
   if(!ok) return;
   try{
     await deleteContactFromServer(editingContactId);
+    if(getMeContactId() === editingContactId) setMeContactId(null);
     closeContactEdit();
     loadRecordings();
   }catch(err){
@@ -1004,10 +1027,18 @@ async function computeWaveform(url){
       peaks.push(sum/blockSize);
     }
     const max = Math.max(...peaks, 0.0001);
-    return peaks.map(p => Math.max(0.12, p/max));
+    return { peaks: peaks.map(p => Math.max(0.12, p/max)), duration: audioBuf.duration };
   }catch(err){
     return null;
   }
+}
+
+// רוחב "בועת" ההודעה משתנה לפי אורך ההקלטה בפועל (כמו בוואטסאפ) - הקלטה קצרה = בועה צרה,
+// הקלטה ארוכה = בועה רחבה יותר, עד תקרה כדי לא לתפוס את כל הרוחב.
+function bubbleWidthFor(durationSec){
+  if(!durationSec || isNaN(durationSec)) return 'min(230px, 92%)';
+  const px = 190 + Math.min(durationSec, 45) * 6.5;
+  return 'min(' + Math.round(px) + 'px, 92%)';
 }
 
 const waveformObserver = new IntersectionObserver((entries) => {
@@ -1044,6 +1075,10 @@ function buildRecItem(file, token, ext){
   const matchedPhone = phoneInfo ? phoneInfo.phone : fallbackPhone;
   const contact = matchedPhone ? findContactByPhone(matchedPhone) : null;
   const genericDate = extractDateLabel(file);
+
+  // אם ההקלטה שייכת לאיש הקשר שסומן כ"אני" - מיישרים לשמאל, כמו הודעות יוצאות בוואטסאפ.
+  if(contact && contact.id === getMeContactId()) item.classList.add('rec-mine');
+  item.style.width = bubbleWidthFor(null); // רוחב התחלתי, יתעדכן בפועל ברגע שאורך ההקלטה יתברר
 
   if(contact){
     name.textContent = contact.name;
