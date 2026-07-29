@@ -1122,23 +1122,24 @@ const waveformObserver = new IntersectionObserver((entries) => {
 }, {root: listEl, threshold: 0.15});
 
 function buildRecItem(file, token, ext){
-  const item = document.createElement('div');
-  item.className = 'rec-item';
+  // שורת ההודעה: אווטאר + עמודה (שם מעל, בועה מתחת) - בדיוק כמו בוואטסאפ.
+  const row = document.createElement('div');
+  row.className = 'rec-row';
 
   const playBtn = document.createElement('button');
   playBtn.className = 'play-btn';
   playBtn.innerHTML = ICON_PLAY;
   playBtn.setAttribute('aria-label', 'נגן');
 
-  const info = document.createElement('div');
-  info.className = 'rec-info';
+  const col = document.createElement('div');
+  col.className = 'rec-col';
 
-  const top = document.createElement('div');
-  top.className = 'rec-top';
+  const nameRow = document.createElement('div');
+  nameRow.className = 'rec-name-row';
   const name = document.createElement('span');
   name.className = 'rec-name';
   name.textContent = file.name || '(ללא שם)';
-  top.appendChild(name);
+  nameRow.appendChild(name);
 
   const phoneInfo = parsePhoneAndDate(file.name);
   const fallbackPhone = phoneInfo ? null : extractPhoneFallback(file);
@@ -1147,8 +1148,7 @@ function buildRecItem(file, token, ext){
   const genericDate = extractDateLabel(file);
 
   // אם ההקלטה שייכת לאיש הקשר שסומן כ"אני" - מיישרים לשמאל, כמו הודעות יוצאות בוואטסאפ.
-  if(contact && contact.id === getMeContactId()) item.classList.add('rec-mine');
-  item.style.width = bubbleWidthFor(null); // רוחב התחלתי, יתעדכן בפועל ברגע שאורך ההקלטה יתברר
+  if(contact && contact.id === getMeContactId()) row.classList.add('rec-mine');
 
   if(contact){
     name.textContent = contact.name;
@@ -1158,7 +1158,7 @@ function buildRecItem(file, token, ext){
       const metaEl = document.createElement('span');
       metaEl.className = 'rec-meta';
       metaEl.textContent = dateOnly;
-      top.appendChild(metaEl);
+      nameRow.appendChild(metaEl);
     }
   } else if(phoneInfo || fallbackPhone || genericDate){
     const metaEl = document.createElement('span');
@@ -1179,9 +1179,12 @@ function buildRecItem(file, token, ext){
       addBtn.onclick = (e) => { e.stopPropagation(); openContactEdit(null, matchedPhone); };
       metaEl.appendChild(addBtn);
     }
-    top.appendChild(metaEl);
+    nameRow.appendChild(metaEl);
   }
-  info.appendChild(top);
+  col.appendChild(nameRow);
+
+  const bubble = document.createElement('div');
+  bubble.className = 'rec-bubble';
 
   const waveRow = document.createElement('div');
   waveRow.className = 'rec-wave-row';
@@ -1228,35 +1231,27 @@ function buildRecItem(file, token, ext){
 
   waveRow.appendChild(waveform);
   waveRow.appendChild(timeLabel);
-  info.appendChild(waveRow);
-
-  const deleteBtn = document.createElement('button');
-  deleteBtn.className = 'delete-btn';
-  deleteBtn.innerHTML = ICON_TRASH;
-  deleteBtn.setAttribute('aria-label', 'מחיקת הקלטה');
+  bubble.appendChild(playBtn);
+  bubble.appendChild(waveRow);
+  col.appendChild(bubble);
 
   const avatar = document.createElement('div');
   avatar.className = 'rec-avatar';
   avatar.innerHTML = contactAvatarHTML(contact);
 
-  item.appendChild(avatar);
-  item.appendChild(playBtn);
-  item.appendChild(info);
-  item.appendChild(deleteBtn);
+  row.appendChild(avatar);
+  row.appendChild(col);
 
   const src = BASE_URL + 'DownloadFile?token=' + encodeURIComponent(token) +
               '&path=' + encodeURIComponent(extPath(ext) + file.name);
 
   // טעינת גל קול אמיתי כאשר הפריט נכנס לתצוגה. אם הקריאה נחסמת (למשל CORS)
   // נשאר הדפוס המדומה שכבר מוצג, כדי שהתצוגה תמיד תיראה כמו הודעה קולית.
-  item._loadWaveform = async () => {
+  row._loadWaveform = async () => {
     const result = await computeWaveform(src);
-    if(result){
-      setPeaks(result.peaks);
-      if(result.duration && !isNaN(result.duration)) item.style.width = bubbleWidthFor(result.duration);
-    }
+    if(result) setPeaks(result.peaks);
   };
-  waveformObserver.observe(item);
+  waveformObserver.observe(row);
 
   let audio = null;
   let waveRafId = null;
@@ -1273,10 +1268,7 @@ function buildRecItem(file, token, ext){
     if(audio) return audio;
     audio = new Audio(src);
     audio.preload = 'none';
-    audio.addEventListener('loadedmetadata', () => {
-      if(audio.paused) timeLabel.textContent = fmtTime(audio.duration);
-      if(audio.duration && !isNaN(audio.duration)) item.style.width = bubbleWidthFor(audio.duration);
-    });
+    audio.addEventListener('loadedmetadata', () => { if(audio.paused) timeLabel.textContent = fmtTime(audio.duration); });
     audio.addEventListener('timeupdate', () => {
       timeLabel.textContent = fmtTime(audio.currentTime);
     });
@@ -1287,8 +1279,8 @@ function buildRecItem(file, token, ext){
       if(activeAudio === audio){ activeAudio = null; activePlayBtn = null; activeSetPlayed = null; }
 
       // מעבר אוטומטי להקלטה הבאה ברשימה, עם צליל קטן קודם - כמו בוואטסאפ.
-      const next = item.nextElementSibling;
-      if(next && next.classList && next.classList.contains('rec-item') && !next.classList.contains('error-item')){
+      const next = row.nextElementSibling;
+      if(next && next.classList && next.classList.contains('rec-row')){
         playChime();
         setTimeout(() => {
           const nextBtn = next.querySelector('.play-btn');
@@ -1328,10 +1320,12 @@ function buildRecItem(file, token, ext){
     setPlayedRatio(ratio);
   };
 
-  deleteBtn.onclick = async () => {
+  // מחיקה עכשיו דרך תפריט קליק ימני על הבועה, כמו בוואטסאפ, ולא כפתור קבוע על המסך.
+  async function deleteRecording(){
     const ok = confirm('למחוק את ההקלטה "' + (file.name || '') + '"? הפעולה אינה הפיכה.');
     if(!ok) return;
-    deleteBtn.disabled = true;
+    bubble.style.opacity = '.5';
+    bubble.style.pointerEvents = 'none';
     const delUrl = BASE_URL + 'FileAction?token=' + encodeURIComponent(token) +
                    '&action=delete&what=' + encodeURIComponent(extPath(ext) + file.name);
     try{
@@ -1339,18 +1333,24 @@ function buildRecItem(file, token, ext){
       const data = await res.json();
       if(data.responseStatus === 'OK'){
         if(activeAudio === audio){ activeAudio = null; activePlayBtn = null; activeSetPlayed = null; }
-        item.remove();
+        row.remove();
       } else {
         alert('שגיאה במחיקה: ' + (data.message || data.responseStatus));
-        deleteBtn.disabled = false;
+        bubble.style.opacity = '';
+        bubble.style.pointerEvents = '';
       }
     }catch(err){
       alert('שגיאה במחיקה (ייתכן חסימת CORS): ' + err.message);
-      deleteBtn.disabled = false;
+      bubble.style.opacity = '';
+      bubble.style.pointerEvents = '';
     }
-  };
+  }
+  bubble.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    openCtxMenu(e.clientX, e.clientY, deleteRecording);
+  });
 
-  return item;
+  return row;
 }
 
 const micBtn = document.getElementById('micBtn');
