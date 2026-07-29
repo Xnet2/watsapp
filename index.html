@@ -147,7 +147,8 @@
   }
   .wf-bar.played{background:var(--accent);}
   /* עיגול-מחוון (thumb) שיושב על הגל בנקודת ההשמעה הנוכחית, בדיוק כמו בוואטסאפ.
-     הפסים מסודרים RTL (הפס הראשון מימין), אז המחוון זז מימין (התחלה) לשמאל (סוף) לפי "right" ולא "left". */
+     הפסים מסודרים RTL (הפס הראשון מימין), אז המחוון זז מימין (התחלה) לשמאל (סוף) לפי "right" ולא "left".
+     ניתן לגרור אותו (pointer-events:auto) כדי לדלג לזמן השמעה אחר - ר' ה-JS שמטפל ב-pointerdown/move/up. */
   .wf-thumb{
     position:absolute;
     top:50%;
@@ -156,8 +157,19 @@
     background:var(--accent);
     box-shadow:0 1px 2px rgba(0,0,0,.25);
     transform:translate(50%,-50%);
-    pointer-events:none;
+    pointer-events:auto;
+    cursor:grab;
+    touch-action:none;
     transition:right .05s linear;
+  }
+  .wf-thumb.dragging{transition:none;cursor:grabbing;}
+  /* אזור תפיסה שקוף וגדול יותר מסביב לכדור הקטן, כדי שיהיה נוח לגרור גם באצבע */
+  .wf-thumb::before{
+    content:'';
+    position:absolute;
+    top:50%;left:50%;
+    width:26px;height:26px;
+    transform:translate(-50%,-50%);
   }
   .rec-time{font-size:.7rem;color:var(--text-faint);flex-shrink:0;min-width:28px;text-align:left;}
 
@@ -676,6 +688,12 @@ function setMeContactId(id){
   if(id) localStorage.setItem(meContactKey(), id);
   else localStorage.removeItem(meContactKey());
 }
+// מחזיר את איש הקשר שסומן כ"אני", אם הוגדר ואם הוא עדיין קיים ברשימת אנשי הקשר
+function getMeContact(){
+  const id = getMeContactId();
+  if(!id) return null;
+  return getContacts().find(c => c.id === id) || null;
+}
 
 // אנשי הקשר נטענים מהגיליון (לפי הטוקן) ומוחזקים בזיכרון בשביל רינדור מהיר וסינכרוני.
 let contactsCache = [];
@@ -1034,6 +1052,27 @@ function playChime(){
   }catch(err){ /* אם הדפדפן חוסם אודיו ללא אינטראקציה - פשוט מדלגים על הצליל */ }
 }
 
+// צליל בודד ועולה - מסמן שההקלטה שלי עצמי עלתה בהצלחה. שונה במכוון מ-playChime
+// (שני הטונים) כדי שיהיה ברור אם זו הודעה שאני שלחתי או הודעה חדשה שנכנסה מבחוץ.
+function playUploadChime(){
+  try{
+    if(!sharedAudioCtx) sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = sharedAudioCtx;
+    const now = ctx.currentTime;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(600, now);
+    o.frequency.exponentialRampToValueAtTime(1080, now + 0.14);
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.09, now + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.17);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(now);
+    o.stop(now + 0.19);
+  }catch(err){ /* אם הדפדפן חוסם אודיו ללא אינטראקציה - פשוט מדלגים על הצליל */ }
+}
+
 function setStatus(msg, isError){
   if(activeAudio){ activeAudio.pause(); activeAudio = null; activePlayBtn = null; activeSetPlayed = null; }
   listEl.innerHTML = '';
@@ -1153,35 +1192,47 @@ async function loadRecordings(){
   listEl.scrollTop = listEl.scrollHeight;
 }
 
+// שולף את רשימת הקבצים העדכנית ומוסיף לרשימה המוצגת רק את מה שבאמת חדש (לפי renderedFileNames),
+// בלי לנקות/לטעון מחדש את כל מה שכבר מוצג. משמש גם לבדיקה השקטה ברקע וגם מיד אחרי העלאה
+// עצמית, כדי שלא תהיה קפיצת "טעינה מחדש" מיותרת בכל פעם שמעלים הקלטה.
+async function appendNewRecordings(){
+  const token = getToken();
+  const ext = getExt();
+  if(!token) return [];
+  const files = await fetchFileList(token, ext);
+  const newFiles = files.filter(f => !renderedFileNames.has(f.name));
+  if(newFiles.length === 0) return newFiles;
+
+  const wasAtBottom = (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) < 40;
+
+  for(const file of newFiles){
+    listEl.appendChild(buildRecItem(file, token, ext));
+    renderedFileNames.add(file.name);
+  }
+
+  if(wasAtBottom){
+    listEl.scrollTop = listEl.scrollHeight;
+  }
+  return newFiles;
+}
+
 // בדיקה שקטה ברקע כל כמה שניות: אם יש הקלטות חדשות מוסיפים אותן בעדינות לסוף הרשימה,
 // בלי לרענן/לנקות את מה שכבר מוצג ובלי לקפוץ בגלילה - אלא אם המשתמש כבר היה בתחתית
 // הרשימה, ואז גוללים בעדינות כדי לחשוף את ההודעה החדשה.
 async function pollForNewRecordings(){
   if(isPolling) return;
   const token = getToken();
-  const ext = getExt();
   if(!token) return;
   if(listEl.querySelector('.status-line')) return; // עוד לא נטענה רשימה בהצלחה בפעם הראשונה
 
   isPolling = true;
   try{
-    const files = await fetchFileList(token, ext);
-    const newFiles = files.filter(f => !renderedFileNames.has(f.name));
+    const newFiles = await appendNewRecordings();
     if(newFiles.length === 0) return;
 
-    const wasAtBottom = (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) < 40;
-
-    for(const file of newFiles){
-      listEl.appendChild(buildRecItem(file, token, ext));
-      renderedFileNames.add(file.name);
-    }
-
-    if(wasAtBottom){
-      listEl.scrollTop = listEl.scrollHeight;
-    }
-
     // הקלטות שהתגלו כאן הגיעו ממקור חיצוני (למשל שיחה ישירה לשלוחה), ולא דרך
-    // uploadRecording של האתר הזה - לכן שולחים צינתוק גם כאן, כדי לא לפספס אותן.
+    // uploadRecording של האתר הזה - משמיעים צליל כניסת הודעה חדשה (שני טונים) ומצנתקים.
+    playChime();
     sendTzintuk();
   }catch(err){
     // כשל שקט - לא מציגים שגיאה כדי לא להפריע לצפייה, פשוט מנסים שוב בבדיקה הבאה
@@ -1497,6 +1548,42 @@ function buildRecItem(file, token, ext){
     setPlayedRatio(ratio);
   };
 
+  // גרירת הכדור (thumb) כדי לדלג לזמן השמעה אחר מזה שבו הוא נמצא כרגע - במהלך הגרירה
+  // רק התצוגה (הכדור/המילוי/התווית) מתעדכנת בזמן אמת, וברגע השחרור בפועל קופצים לזמן הזה.
+  let isDraggingThumb = false;
+  function ratioFromClientX(clientX){
+    const rect = waveform.getBoundingClientRect();
+    const raw = 1 - ((clientX - rect.left) / rect.width);
+    return Math.max(0, Math.min(1, raw));
+  }
+  thumb.addEventListener('pointerdown', (e) => {
+    ensureAudio();
+    if(!audio.duration) return;
+    e.preventDefault();
+    e.stopPropagation();
+    isDraggingThumb = true;
+    thumb.classList.add('dragging');
+    thumb.setPointerCapture(e.pointerId);
+  });
+  thumb.addEventListener('pointermove', (e) => {
+    if(!isDraggingThumb) return;
+    const ratio = ratioFromClientX(e.clientX);
+    setPlayedRatio(ratio);
+    timeLabel.textContent = fmtTime(ratio * audio.duration);
+  });
+  function finishThumbDrag(e){
+    if(!isDraggingThumb) return;
+    isDraggingThumb = false;
+    thumb.classList.remove('dragging');
+    const ratio = ratioFromClientX(e.clientX);
+    audio.currentTime = ratio * audio.duration;
+    setPlayedRatio(ratio);
+  }
+  thumb.addEventListener('pointerup', finishThumbDrag);
+  thumb.addEventListener('pointercancel', finishThumbDrag);
+  // מונע מהקליק על הכדור "לדלוף" גם ל-waveform.onclick ולגרום לדילוג כפול
+  thumb.addEventListener('click', (e) => { e.stopPropagation(); });
+
   // מחיקה עכשיו דרך תפריט קליק ימני על הבועה, כמו בוואטסאפ, ולא כפתור קבוע על המסך.
   async function deleteRecording(){
     const ok = confirm('למחוק את ההקלטה "' + (file.name || '') + '"? הפעולה אינה הפיכה.');
@@ -1605,6 +1692,20 @@ fileInput.onchange = () => {
   }
 };
 
+// בונה שם קובץ בפורמט Phone-...-Date-... (ר' parsePhoneAndDate) עם המספר של איש הקשר
+// שסומן כ"אני" - כך שהקלטה שמועלית דרך האתר תיוחס אוטומטית אליי (שם + יישור כהודעה יוצאת),
+// בדיוק כמו הקלטות עם מספר שולח מזוהה. אם לא סומן "אני", משתמשים בשם גנרי עם תאריך בלבד.
+function buildUploadFileName(audioExt){
+  const pad = n => String(n).padStart(2,'0');
+  const now = new Date();
+  const dateStr = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + '-' +
+                  pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
+  const me = getMeContact();
+  const meDigits = me && me.phone ? String(me.phone).replace(/\D/g, '') : '';
+  if(meDigits) return 'Phone-' + meDigits + '-Date-' + dateStr + '.' + audioExt;
+  return 'recording-' + dateStr + '.' + audioExt;
+}
+
 async function uploadRecording(blob){
   const token = getToken();
   const ext = getExt();
@@ -1630,7 +1731,7 @@ async function uploadRecording(blob){
   form.append('path', extPath(ext));
   form.append('convertAudio', '1');
   form.append('autoNumbering', 'true');
-  form.append('file', blob, 'recording.' + guessedExt);
+  form.append('file', blob, buildUploadFileName(guessedExt));
 
   try{
     const res = await fetch(BASE_URL + 'UploadFile', {method:'POST', body: form});
@@ -1640,8 +1741,14 @@ async function uploadRecording(blob){
       statusText.style.display = 'flex';
       statusText.style.alignItems = 'center';
       statusText.style.gap = '6px';
+      playUploadChime();
       sendTzintuk();
-      loadRecordings();
+      // מוסיפים רק את ההקלטה החדשה לסוף הרשימה (בלי לטעון הכל מחדש) - אחרי רגע קצר
+      // שבו נשאר מוצג אישור ה"נשלח בהצלחה" במקום תיבת הסטטוס הזמנית.
+      setTimeout(async () => {
+        item.remove();
+        await appendNewRecordings();
+      }, 650);
     } else {
       item.classList.add('error-item');
       statusText.className = 'status-text error';
