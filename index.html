@@ -17,6 +17,8 @@
     --text-faint:#8696A0;
     --accent:#00A884;
     --accent-dark:#008069;
+    --mine-bg:#D9FDD3;
+    --mine-bg-hover:#CFF0C4;
     --danger:#DC2626;
     --header:#008069;
     --radius:8px;
@@ -95,6 +97,9 @@
   .rec-item:hover{background:#FAFAF9;}
   .rec-item.pending{box-shadow:0 0 0 2px var(--accent) inset;}
   .rec-item.error-item{background:#FFF5F5;}
+  /* הודעות "שלי" מיושרות לצד השמאלי (הפוך מהכיוון הכללי RTL) ומסומנות בצבע ירקרק, כמו הודעות יוצאות בוואטסאפ */
+  .rec-item.rec-mine{align-self:flex-end;background:var(--mine-bg);}
+  .rec-item.rec-mine:hover{background:var(--mine-bg-hover);}
 
   .play-btn{
     width:36px;height:36px;flex-shrink:0;border-radius:50%;
@@ -1036,9 +1041,9 @@ async function computeWaveform(url){
 // רוחב "בועת" ההודעה משתנה לפי אורך ההקלטה בפועל (כמו בוואטסאפ) - הקלטה קצרה = בועה צרה,
 // הקלטה ארוכה = בועה רחבה יותר, עד תקרה כדי לא לתפוס את כל הרוחב.
 function bubbleWidthFor(durationSec){
-  if(!durationSec || isNaN(durationSec)) return 'min(230px, 92%)';
-  const px = 190 + Math.min(durationSec, 45) * 6.5;
-  return 'min(' + Math.round(px) + 'px, 92%)';
+  if(!durationSec || isNaN(durationSec)) return 'min(400px, 94%)';
+  const px = 360 + Math.min(durationSec, 45) * 4;
+  return 'min(' + Math.round(px) + 'px, 94%)';
 }
 
 const waveformObserver = new IntersectionObserver((entries) => {
@@ -1180,8 +1185,11 @@ function buildRecItem(file, token, ext){
   // טעינת גל קול אמיתי כאשר הפריט נכנס לתצוגה. אם הקריאה נחסמת (למשל CORS)
   // נשאר הדפוס המדומה שכבר מוצג, כדי שהתצוגה תמיד תיראה כמו הודעה קולית.
   item._loadWaveform = async () => {
-    const peaks = await computeWaveform(src);
-    if(peaks) setPeaks(peaks);
+    const result = await computeWaveform(src);
+    if(result){
+      setPeaks(result.peaks);
+      if(result.duration && !isNaN(result.duration)) item.style.width = bubbleWidthFor(result.duration);
+    }
   };
   waveformObserver.observe(item);
 
@@ -1200,7 +1208,10 @@ function buildRecItem(file, token, ext){
     if(audio) return audio;
     audio = new Audio(src);
     audio.preload = 'none';
-    audio.addEventListener('loadedmetadata', () => { if(audio.paused) timeLabel.textContent = fmtTime(audio.duration); });
+    audio.addEventListener('loadedmetadata', () => {
+      if(audio.paused) timeLabel.textContent = fmtTime(audio.duration);
+      if(audio.duration && !isNaN(audio.duration)) item.style.width = bubbleWidthFor(audio.duration);
+    });
     audio.addEventListener('timeupdate', () => {
       timeLabel.textContent = fmtTime(audio.currentTime);
     });
