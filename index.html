@@ -27,15 +27,22 @@
   html,body{height:100%;margin:0;}
   body{
     font-family:'Assistant',sans-serif;
-    background:var(--bg);
     color:var(--text);
     display:flex;
     justify-content:center;
     -webkit-font-smoothing:antialiased;
+    /* רקע כללי מחוץ לתיבת ההודעות: המון אלמנטים קטנים ושקופים, בסגנון טפט וואטסאפ -
+       תבנית SVG חוזרת של אייקונים עדינים (בועת צ'אט, מיקרופון, גל קול, טלפון, תו מוזיקלי,
+       כוכב, לב, נקודות) בשקיפות נמוכה מאוד כדי שלא יהיה משעמם לעין אבל גם לא יבלוט/יסיח דעת.
+       צבע הבסיס (--bg) נשאר כרקע התחתון, והתבנית רק "רוכבת" עליו. */
+    background-color:var(--bg);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Cg fill='none' stroke='%23000000' stroke-opacity='0.05' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M30 26h34a10 10 0 0 1 10 10v16a10 10 0 0 1-10 10H48l-10 9v-9h-8a10 10 0 0 1-10-10V36a10 10 0 0 1 10-10z'/%3E%3Cpath d='M215 44a16 16 0 0 1 16 16v18a16 16 0 0 1-32 0V60a16 16 0 0 1 16-16z'/%3E%3Cpath d='M203 78a12 12 0 0 0 24 0'/%3E%3Cpath d='M215 90v12M209 102h12'/%3E%3Cpath d='M96 118c6 10 6 20 0 30M108 108c11 15 11 35 0 50M120 98c16 20 16 46 0 66'/%3E%3Ccircle cx='262' cy='140' r='11'/%3E%3Ccircle cx='262' cy='176' r='4'/%3E%3Cpath d='M30 168l7-16 7 16 16 7-16 7-7 16-7-16-16-7z'/%3E%3Cpath d='M150 200a13 13 0 0 1 26 0c0 9-13 17-13 17s-13-8-13-17z'/%3E%3Cpath d='M40 230a9 9 0 0 0 9-9v-36l18-5v33a9 9 0 1 1-6-8.5'/%3E%3Cpath d='M245 210h30M245 218h22M245 226h26'/%3E%3Cpath d='M190 260h40a9 9 0 0 1 9 9v14a9 9 0 0 1-9 9h-22l-9 8v-8h-9a9 9 0 0 1-9-9v-14a9 9 0 0 1 9-9z'/%3E%3Ccircle cx='100' cy='280' r='10'/%3E%3Cpath d='M92 280a8 8 0 0 0 16 0'/%3E%3Cpath d='M100 290v8M96 298h8'/%3E%3Cpath d='M270 20l5 12 12 5-12 5-5 12-5-12-12-5 12-5z'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat:repeat;
+    background-size:320px 320px;
   }
   #app{
     width:100%;
-    max-width:640px;
+    max-width:400px;
     height:100vh;
     display:flex;
     flex-direction:column;
@@ -597,6 +604,10 @@ let audioCtx = null;
 // מעקב אחרי שמות הקבצים שכבר מוצגים ברשימה, לצורך בדיקת רענון שקטה ברקע
 let renderedFileNames = new Set();
 let isPolling = false;
+// דגל שמסמן שהעלאה עצמית מהאתר נמצאת כרגע בתהליך (מרגע קבלת אישור מהשרת ועד סיום סימון
+// "שלי" על הקובץ החדש) - כדי שבדיקת הרקע השקטה (pollForNewRecordings) לא "תגנוב" בינתיים
+// את גילוי הקובץ החדש ותרנדר אותו בלי סימון "שלי", לפני שההעלאה עצמה הספיקה לסמן אותו.
+let uploadInProgress = false;
 
 function getToken(){ return localStorage.getItem(LS_TOKEN) || ''; }
 function getExt(){ return localStorage.getItem(LS_EXT) || '1'; }
@@ -1241,6 +1252,7 @@ async function appendNewRecordings(markAsSelf){
 // הרשימה, ואז גוללים בעדינות כדי לחשוף את ההודעה החדשה.
 async function pollForNewRecordings(){
   if(isPolling) return;
+  if(uploadInProgress) return;
   const token = getToken();
   if(!token) return;
   if(listEl.querySelector('.status-line')) return; // עוד לא נטענה רשימה בהצלחה בפעם הראשונה
@@ -1708,6 +1720,8 @@ async function uploadRecording(blob){
   listEl.appendChild(item);
   listEl.scrollTop = listEl.scrollHeight;
 
+  uploadInProgress = true;
+
   const guessedExt = (blob.type && blob.type.includes('wav')) ? 'wav'
                     : (blob.type && blob.type.includes('mp3')) ? 'mp3'
                     : 'webm';
@@ -1741,14 +1755,20 @@ async function uploadRecording(blob){
       // שבו נשאר מוצג אישור ה"נשלח בהצלחה" במקום תיבת הסטטוס הזמנית.
       setTimeout(async () => {
         item.remove();
-        await appendNewRecordings(true);
+        try{
+          await appendNewRecordings(true);
+        } finally {
+          uploadInProgress = false;
+        }
       }, 650);
     } else {
+      uploadInProgress = false;
       item.classList.add('error-item');
       statusText.className = 'status-text error';
       statusText.textContent = 'שגיאה בהעלאה: ' + (data.message || data.responseStatus);
     }
   }catch(err){
+    uploadInProgress = false;
     item.classList.add('error-item');
     statusText.className = 'status-text error';
     statusText.textContent = 'שגיאה בהעלאה (ייתכן חסימת CORS): ' + err.message;
