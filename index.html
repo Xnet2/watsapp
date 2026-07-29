@@ -684,6 +684,23 @@ function getMeContact(){
   return getContacts().find(c => c.id === id) || null;
 }
 
+// רשימת שמות קבצים שהועלו על-ידי מי שמכנה שם ("אני") מהאתר הזה - נשמרת מקומית לכל טוקן.
+// דרושה כי עם autoNumbering=true (ר' uploadRecording) ימות המשיח קובע לקובץ שם/מספר משלו
+// (כדי שההקלטה תיכנס לרצף הרגיל של השלוחה ותהיה ניתנת להשמעה בטלפון), ולכן אי אפשר יותר
+// לזהות "זו הקלטה שלי" לפי תבנית Phone-...-Date-... בשם הקובץ - זה נשמר כאן במקום זה.
+function selfUploadedKey(){ return 'yemot_self_uploaded:' + (getToken() || ''); }
+function getSelfUploadedNames(){
+  try{ return new Set(JSON.parse(localStorage.getItem(selfUploadedKey()) || '[]')); }
+  catch(e){ return new Set(); }
+}
+function addSelfUploadedName(name){
+  const set = getSelfUploadedNames();
+  set.add(name);
+  // שומרים רק את ה-200 האחרונים כדי שלא יצטבר לעד
+  const arr = Array.from(set).slice(-200);
+  localStorage.setItem(selfUploadedKey(), JSON.stringify(arr));
+}
+
 // אנשי הקשר נטענים מהגיליון (לפי הטוקן) ומוחזקים בזיכרון בשביל רינדור מהיר וסינכרוני.
 let contactsCache = [];
 
@@ -1194,13 +1211,17 @@ async function loadRecordings(){
 // שולף את רשימת הקבצים העדכנית ומוסיף לרשימה המוצגת רק את מה שבאמת חדש (לפי renderedFileNames),
 // בלי לנקות/לטעון מחדש את כל מה שכבר מוצג. משמש גם לבדיקה השקטה ברקע וגם מיד אחרי העלאה
 // עצמית, כדי שלא תהיה קפיצת "טעינה מחדש" מיותרת בכל פעם שמעלים הקלטה.
-async function appendNewRecordings(){
+// markAsSelf=true (נקרא מיד אחרי uploadRecording בלבד) מסמן כל קובץ חדש שנמצא כ"הקלטה שלי"
+// לפני שהוא נבנה לתצוגה - כדי שה-mine styling יחול כבר מהרגע הראשון שהוא מוצג.
+async function appendNewRecordings(markAsSelf){
   const token = getToken();
   const ext = getExt();
   if(!token) return [];
   const files = await fetchFileList(token, ext);
   const newFiles = files.filter(f => !renderedFileNames.has(f.name));
   if(newFiles.length === 0) return newFiles;
+
+  if(markAsSelf) newFiles.forEach(f => addSelfUploadedName(f.name));
 
   const wasAtBottom = (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) < 40;
 
@@ -1311,11 +1332,15 @@ function buildRecItem(file, token, ext){
   const phoneInfo = parsePhoneAndDate(file.name);
   const fallbackPhone = phoneInfo ? null : extractPhoneFallback(file);
   const matchedPhone = phoneInfo ? phoneInfo.phone : fallbackPhone;
-  const contact = matchedPhone ? findContactByPhone(matchedPhone) : null;
+  let contact = matchedPhone ? findContactByPhone(matchedPhone) : null;
   const genericDate = extractDateLabel(file);
+  const isSelfUploaded = getSelfUploadedNames().has(file.name);
 
   // אם ההקלטה שייכת לאיש הקשר שסומן כ"אני" - מיישרים לשמאל, כמו הודעות יוצאות בוואטסאפ.
-  if(contact && contact.id === getMeContactId()) row.classList.add('rec-mine');
+  // וכן אם זו הקלטה שהועלתה מהאתר הזה (מזוהה מקומית לפי שם הקובץ, ר' addSelfUploadedName) -
+  // כי מאז שהמעבר ל-autoNumbering=true בהעלאה, שם הקובץ עצמו כבר לא נושא Phone-...-Date-...
+  if(isSelfUploaded && !contact) contact = getMeContact();
+  if((contact && contact.id === getMeContactId()) || isSelfUploaded) row.classList.add('rec-mine');
 
   // אין יותר שם/תאריך קבועים מעל הבועה - כל הפרטים עוברים לחלונית ריחוף על תמונת השולח.
   const fullDateStr = phoneInfo ? phoneInfo.date : genericDate;
@@ -1655,17 +1680,15 @@ fileInput.onchange = () => {
   }
 };
 
-// בונה שם קובץ בפורמט Phone-...-Date-... (ר' parsePhoneAndDate) עם המספר של איש הקשר
-// שסומן כ"אני" - כך שהקלטה שמועלית דרך האתר תיוחס אוטומטית אליי (שם + יישור כהודעה יוצאת),
-// בדיוק כמו הקלטות עם מספר שולח מזוהה. אם לא סומן "אני", משתמשים בשם גנרי עם תאריך בלבד.
+// בונה שם קובץ זמני בלבד להעלאה. מאז המעבר ל-autoNumbering=true (ר' uploadRecording)
+// ימות המשיח מתעלם משם הקובץ הזה לגמרי וקובע לו בעצמו שם/מספר לפי הרצף הרגיל של השלוחה -
+// כך שההקלטה תיכנס לרצף הרגיל ותהיה ניתנת להשמעה בטלפון (במקום להישמר עם שם Phone-...-Date-...
+// שהטלפון לא מזהה כחלק מרצף ההודעות). השם עצמו כאן משמש רק כדי שיהיה ל-FormData שם קובץ תקין.
 function buildUploadFileName(audioExt){
   const pad = n => String(n).padStart(2,'0');
   const now = new Date();
   const dateStr = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + '-' +
                   pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
-  const me = getMeContact();
-  const meDigits = me && me.phone ? String(me.phone).replace(/\D/g, '') : '';
-  if(meDigits) return 'Phone-' + meDigits + '-Date-' + dateStr + '.' + audioExt;
   return 'recording-' + dateStr + '.' + audioExt;
 }
 
@@ -1690,15 +1713,18 @@ async function uploadRecording(blob){
                     : 'webm';
   const fileName = buildUploadFileName(guessedExt);
 
-  // חשוב: עם autoNumbering=true ימות המשיח מתעלם לגמרי משם הקובץ שנשלח ומייצר לו
-  // מספור אוטומטי משלו (וכך אין שום דרך לשמר בו את Phone-...-Date-...). לכן כאן
-  // מבצעים העלאה "רגילה" (autoNumbering=false) עם הנתיב המלא כולל שם הקובץ הרצוי -
-  // כך השם עם המספר שלי נשמר בפועל, וההקלטה תיוחס אליי כשהיא תוצג ברשימה.
+  // חשוב: בעבר הועלה כאן עם autoNumbering=false ושם קובץ מיוחד (Phone-...-Date-...), כדי
+  // לשמר בשם הקובץ מי שלח את ההקלטה. הבעיה: קובץ שמועלה כך לא נכנס לרצף הממוספר הרגיל של
+  // השלוחה (425, 426, 427...) שממנו הטלפון בפועל משמיע הודעות - כך שההקלטה הייתה מוצגת
+  // באתר אבל לא ניתנת להשמעה בחיוג לשלוחה. לכן כעת מעלים עם autoNumbering=true (ימות המשיח
+  // קובע בעצמו את המספר/שם הבא ברצף, ומ-convertAudio ממיר לפורמט תקין כמו שאר ההקלטות),
+  // וכדי לשמר את הזיהוי "זו הקלטה שלי" בתצוגה, השם נשמר מקומית ב-localStorage
+  // (ר' addSelfUploadedName) ולא בתוך שם הקובץ עצמו.
   const form = new FormData();
   form.append('token', token);
-  form.append('path', extPath(ext) + fileName);
+  form.append('path', extPath(ext));
   form.append('convertAudio', '1');
-  form.append('autoNumbering', 'false');
+  form.append('autoNumbering', 'true');
   form.append('file', blob, fileName);
 
   try{
@@ -1715,7 +1741,7 @@ async function uploadRecording(blob){
       // שבו נשאר מוצג אישור ה"נשלח בהצלחה" במקום תיבת הסטטוס הזמנית.
       setTimeout(async () => {
         item.remove();
-        await appendNewRecordings();
+        await appendNewRecordings(true);
       }, 650);
     } else {
       item.classList.add('error-item');
