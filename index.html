@@ -433,9 +433,9 @@
     <input type="text" id="extInput" placeholder="1" dir="ltr" value="1">
     <div class="hint">הנתיב שממנו יישלפו ההקלטות: ivr2:/&lt;שלוחה&gt;/. שלוש ההקלטות האחרונות ברשימה (הקלטות מערכת) מוסתרות אוטומטית. מספר שולח מזוהה אוטומטית כאשר שם הקובץ בפורמט Phone-...-Date-... (תלוי בהגדרות השלוחה), ובנוסף מנסים לזהות אותו משדה נוסף בתשובת השרת אם קיים כזה.</div>
 
-    <label for="tzintukPhoneInput">שליחת צינתוק בהקלטה חדשה (אופציונלי)</label>
-    <input type="text" id="tzintukPhoneInput" placeholder="מספר טלפון, השאירו ריק לביטול" dir="ltr">
-    <div class="hint">אם יוזן מספר, בכל הקלטה חדשה (מיקרופון או קובץ) תישלח אליו שיחת צינתוק דרך פקודת RunTzintuk. כדאי לוודא מול התיעוד העדכני של ימות המשיח שהפרמטרים תואמים לחשבון שלכם, ולעקוב אחר קונסולת הדפדפן (F12) אם השליחה לא מצליחה.</div>
+    <label for="tzintukListInput">שליחת צינתוק לרשימה בהקלטה חדשה (אופציונלי)</label>
+    <input type="text" id="tzintukListInput" placeholder="מספר/שם הרשימה, השאירו ריק לביטול" dir="ltr">
+    <div class="hint">יש להזין את מספר רשימת הצינתוקים כפי שמוגדר בימות המשיח תחת "ניהול רשימות צינתוקים במודול צינתוקים חינמיים" (לדוגמה: 1, או השם שהוגדר לרשימה). בכל הקלטה חדשה - הן כזו שמתקבלת דרך אתר זה והן כזו שמתקבלת ישירות מהשלוחה בטלפון - תישלח שיחת צינתוק לכל המספרים הרשומים באותה רשימה, דרך פקודת RunTzintuk (עם הפרמטר phones=tzl:&lt;מספר הרשימה&gt;). כדאי לוודא מול התיעוד העדכני של ימות המשיח שהפרמטרים תואמים לחשבון שלכם, ולעקוב אחר קונסולת הדפדפן (F12) אם השליחה לא מצליחה.</div>
 
     <label for="tzintukCallerIdInput">זיהוי מתקשר לצינתוק (אופציונלי)</label>
     <input type="text" id="tzintukCallerIdInput" placeholder="השאירו ריק לזיהוי ברירת מחדל" dir="ltr">
@@ -556,7 +556,7 @@ document.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeCtxMen
 const BASE_URL = 'https://www.call2all.co.il/ym/api/';
 const LS_TOKEN = 'yemot_token';
 const LS_EXT = 'yemot_ext';
-const LS_TZINTUK_PHONE = 'yemot_tzintuk_phone';
+const LS_TZINTUK_LIST = 'yemot_tzintuk_list';
 const LS_TZINTUK_CALLERID = 'yemot_tzintuk_callerid';
 const HIDE_LAST_N = 3;
 
@@ -585,7 +585,7 @@ const extLabel = document.getElementById('extLabel');
 const settingsOverlay = document.getElementById('settingsOverlay');
 const tokenInput = document.getElementById('tokenInput');
 const extInput = document.getElementById('extInput');
-const tzintukPhoneInput = document.getElementById('tzintukPhoneInput');
+const tzintukListInput = document.getElementById('tzintukListInput');
 const tzintukCallerIdInput = document.getElementById('tzintukCallerIdInput');
 
 let activeAudio = null;
@@ -599,13 +599,13 @@ let isPolling = false;
 
 function getToken(){ return localStorage.getItem(LS_TOKEN) || ''; }
 function getExt(){ return localStorage.getItem(LS_EXT) || '1'; }
-function getTzintukPhone(){ return localStorage.getItem(LS_TZINTUK_PHONE) || ''; }
+function getTzintukList(){ return localStorage.getItem(LS_TZINTUK_LIST) || ''; }
 function getTzintukCallerId(){ return localStorage.getItem(LS_TZINTUK_CALLERID) || ''; }
 
 function openSettings(){
   tokenInput.value = getToken();
   extInput.value = getExt();
-  tzintukPhoneInput.value = getTzintukPhone();
+  tzintukListInput.value = getTzintukList();
   tzintukCallerIdInput.value = getTzintukCallerId();
   settingsOverlay.classList.add('open');
 }
@@ -621,32 +621,33 @@ document.getElementById('saveSettingsBtn').onclick = () => {
   if(!t){ alert('נא להזין טוקן'); return; }
   localStorage.setItem(LS_TOKEN, t);
   localStorage.setItem(LS_EXT, e);
-  localStorage.setItem(LS_TZINTUK_PHONE, tzintukPhoneInput.value.trim());
+  localStorage.setItem(LS_TZINTUK_LIST, tzintukListInput.value.trim());
   localStorage.setItem(LS_TZINTUK_CALLERID, tzintukCallerIdInput.value.trim());
   closeSettings();
   fetchContactsFromServer().then(loadRecordings);
 };
 
-// ===== צינתוק בהקלטה חדשה =====
-// שולח שיחת צינתוק דרך פקודת RunTzintuk של ימות המשיח. שם הפרמטר של המספר
-// המיועד (phone) מבוסס על מוסכמות שאר פקודות ה-API של ימות המשיח; אם השליחה
-// נכשלת, בדקו את השגיאה שמודפסת לקונסולה מול התיעוד העדכני בפורום המפתחים.
+// ===== צינתוק לרשימת מנויים בהקלטה חדשה =====
+// שולח שיחת צינתוק לכל המספרים הרשומים ברשימת צינתוקים (ניהול רשימות צינתוקים
+// במודול צינתוקים חינמיים בימות המשיח), דרך פקודת RunTzintuk. הפרמטר phones=tzl:<מספר הרשימה>
+// אומר לימות המשיח לשלוף בעצמו את כל המספרים המנויים לאותה רשימה ולצנתק את כולם -
+// אין צורך לשלוף את המספרים בצד שלנו, ימות המשיח עושה את זה מולם.
 async function sendTzintuk(){
-  const phone = getTzintukPhone();
-  if(!phone) return;
+  const list = getTzintukList();
+  if(!list) return;
   const token = getToken();
   if(!token) return;
-  const params = new URLSearchParams({ token, phone });
+  const params = new URLSearchParams({ token, phones: 'tzl:' + list });
   const callerId = getTzintukCallerId();
   if(callerId) params.set('callerId', callerId);
   try{
     const res = await fetch(BASE_URL + 'RunTzintuk?' + params.toString());
     const data = await res.json();
     if(data.responseStatus !== 'OK'){
-      console.warn('שליחת הצינתוק נכשלה:', data.message || data.responseStatus);
+      console.warn('שליחת הצינתוק לרשימה נכשלה:', data.message || data.responseStatus);
     }
   }catch(err){
-    console.warn('שגיאה בשליחת הצינתוק (ייתכן חסימת CORS):', err.message);
+    console.warn('שגיאה בשליחת הצינתוק לרשימה (ייתכן חסימת CORS):', err.message);
   }
 }
 
@@ -1178,6 +1179,10 @@ async function pollForNewRecordings(){
     if(wasAtBottom){
       listEl.scrollTop = listEl.scrollHeight;
     }
+
+    // הקלטות שהתגלו כאן הגיעו ממקור חיצוני (למשל שיחה ישירה לשלוחה), ולא דרך
+    // uploadRecording של האתר הזה - לכן שולחים צינתוק גם כאן, כדי לא לפספס אותן.
+    sendTzintuk();
   }catch(err){
     // כשל שקט - לא מציגים שגיאה כדי לא להפריע לצפייה, פשוט מנסים שוב בבדיקה הבאה
     console.warn('בדיקת הקלטות חדשות נכשלה:', err.message);
