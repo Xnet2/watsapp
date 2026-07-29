@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>הקלטות ימות המשיח</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F5F7;
+    --surface:#FFFFFF;
+    --border:#E4E6EB;
+    --text:#161A22;
+    --text-dim:#6B7280;
+    --text-faint:#9CA3AF;
+    --accent:#4F46E5;
+    --danger:#DC2626;
+    --header:#12141C;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:'Heebo',sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    display:flex;
+    justify-content:center;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{
+    width:100%;
+    max-width:640px;
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    background:var(--bg);
+    box-shadow:0 0 40px rgba(0,0,0,.06);
+  }
+  button{font-family:inherit;}
+  button:focus-visible, input:focus-visible, .waveform:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px;
+  }
+  svg{display:block;}
+
+  header{
+    background:var(--header);
+    color:#fff;
+    padding:18px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-shrink:0;
+  }
+  header .title{display:flex;flex-direction:column;gap:2px;}
+  header .title b{font-size:1.02rem;font-weight:600;letter-spacing:.01em;}
+  header .title span{font-size:.76rem;color:#9CA3AF;font-weight:400;}
+  header .actions{display:flex;gap:6px;}
+  header button.icon{
+    width:36px;height:36px;
+    background:rgba(255,255,255,.06);border:none;color:#fff;cursor:pointer;
+    border-radius:8px;display:flex;align-items:center;justify-content:center;
+    transition:background .15s;
+  }
+  header button.icon:hover{background:rgba(255,255,255,.14);}
+  header button.icon svg{width:17px;height:17px;}
+
+  #list{
+    flex:1;
+    overflow-y:auto;
+    padding:18px 16px 10px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .rec-item{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:12px 14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    transition:box-shadow .15s, border-color .15s;
+  }
+  .rec-item:hover{box-shadow:0 2px 10px rgba(0,0,0,.05);}
+  .rec-item.pending{border-inline-start:3px solid var(--accent);}
+  .rec-item.error-item{border-color:#F3C6C6;background:#FFF8F8;}
+
+  .play-btn{
+    width:38px;height:38px;flex-shrink:0;border-radius:50%;
+    background:var(--accent);border:none;color:#fff;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .1s, background .15s;
+  }
+  .play-btn:hover{background:#433CD1;}
+  .play-btn:active{transform:scale(.94);}
+  .play-btn svg{width:15px;height:15px;}
+
+  .rec-info{flex:1;min-width:0;}
+  .rec-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:7px;}
+  .rec-name{font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .rec-meta{font-size:.72rem;color:var(--text-faint);flex-shrink:0;white-space:nowrap;}
+
+  .rec-wave-row{display:flex;align-items:center;gap:10px;}
+  .waveform{
+    flex:1;height:28px;display:flex;align-items:center;gap:2px;cursor:pointer;
+  }
+  .wf-bar{
+    width:3px;min-width:3px;border-radius:2px;background:#DDE0E6;flex-shrink:0;
+  }
+  .wf-bar.played{background:var(--accent);}
+  .rec-time{font-size:.7rem;color:var(--text-faint);flex-shrink:0;min-width:32px;text-align:left;}
+
+  .delete-btn{
+    width:32px;height:32px;flex-shrink:0;border-radius:8px;border:none;background:none;
+    color:var(--text-faint);cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:background .15s,color .15s;
+  }
+  .delete-btn:hover{background:#FDEDEC;color:var(--danger);}
+  .delete-btn svg{width:16px;height:16px;}
+
+  .status-text{font-size:.82rem;color:var(--text-dim);}
+  .status-text.error{color:var(--danger);}
+
+  .empty-state, .status-line{
+    text-align:center;color:var(--text-dim);font-size:.9rem;
+    padding:40px 16px;line-height:1.6;white-space:pre-line;
+  }
+  .status-line.error{color:var(--danger);}
+
+  #bottombar{
+    flex-shrink:0;
+    background:var(--surface);
+    padding:12px 16px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    border-top:1px solid var(--border);
+  }
+  #bottombar button.attach{
+    width:38px;height:38px;border-radius:8px;border:none;background:none;color:var(--text-dim);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    transition:background .15s,color .15s;
+  }
+  #bottombar button.attach:hover{background:var(--bg);color:var(--text);}
+  #bottombar button.attach svg{width:19px;height:19px;}
+
+  #recTimer{
+    flex:1;
+    font-size:.86rem;
+    color:var(--text-dim);
+    display:none;
+    align-items:center;
+    gap:8px;
+  }
+  #recTimer .dot{width:8px;height:8px;border-radius:50%;background:var(--danger);animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+  #placeholderText{flex:1;color:var(--text-faint);font-size:.86rem;}
+
+  #micBtn{
+    width:44px;height:44px;border-radius:50%;border:none;
+    background:var(--header);color:#fff;
+    cursor:pointer;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .12s, background .15s;
+  }
+  #micBtn svg{width:17px;height:17px;}
+  #micBtn.recording{background:var(--danger);}
+  #micBtn:active{transform:scale(.92);}
+
+  .ov{
+    position:fixed;inset:0;background:rgba(15,17,25,.55);
+    display:none;align-items:center;justify-content:center;z-index:50;
+    padding:16px;
+  }
+  .ov.open{display:flex;}
+  .ov-box{
+    background:#fff;border-radius:16px;padding:24px;width:100%;max-width:420px;
+    max-height:90vh;overflow-y:auto;
+  }
+  .ov-box h2{margin:0 0 4px;font-size:1.08rem;font-weight:700;}
+  .ov-box .sub{font-size:.8rem;color:var(--text-dim);margin-bottom:16px;}
+  .ov-box label{display:block;font-size:.8rem;font-weight:600;margin:14px 0 5px;}
+  .ov-box input[type="text"]{
+    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:.92rem;
+    font-family:inherit;background:#FAFAFB;
+  }
+  .ov-box input[type="text"]:focus{border-color:var(--accent);background:#fff;}
+  .ov-box .hint{font-size:.73rem;color:var(--text-faint);margin-top:5px;line-height:1.5;}
+  .ov-box .warn{
+    display:flex;gap:8px;
+    background:#FFF8EC;border:1px solid #F5DFAE;border-radius:8px;
+    padding:10px 12px;font-size:.74rem;color:#8A6100;margin-top:16px;line-height:1.55;
+  }
+  .ov-box .warn svg{width:15px;height:15px;flex-shrink:0;margin-top:2px;color:#B8860B;}
+  .ov-box .btnrow{display:flex;gap:10px;margin-top:20px;}
+  .ov-box .btnrow button{
+    flex:1;padding:11px;border-radius:8px;border:none;font-size:.9rem;font-weight:600;cursor:pointer;font-family:inherit;
+  }
+  .ov-box .btnrow button.primary{background:var(--header);color:#fff;}
+  .ov-box .btnrow button.primary:hover{background:#000;}
+  .ov-box .btnrow button.secondary{background:var(--bg);color:var(--text);}
+  .ov-box .btnrow button.secondary:hover{background:var(--border);}
+  .ov-box .btnrow button.danger-text{color:var(--danger);}
+
+  #contactsList{display:flex;flex-direction:column;gap:6px;margin-top:6px;max-height:50vh;overflow-y:auto;}
+  .contact-row{
+    display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;cursor:pointer;
+    border:1px solid var(--border);background:#FAFAFB;transition:background .15s;
+  }
+  .contact-row:hover{background:var(--bg);}
+  .contact-row .c-avatar{
+    width:38px;height:38px;border-radius:50%;flex-shrink:0;overflow:hidden;
+    background:var(--border);color:var(--text-faint);display:flex;align-items:center;justify-content:center;
+  }
+  .contact-row .c-avatar img{width:100%;height:100%;object-fit:cover;}
+  .contact-row .c-avatar svg{width:18px;height:18px;}
+  .contact-row .c-info{flex:1;min-width:0;}
+  .contact-row .c-name{font-weight:600;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .contact-row .c-phone{font-size:.72rem;color:var(--text-faint);direction:ltr;text-align:right;}
+  .empty-contacts{text-align:center;color:var(--text-dim);font-size:.85rem;padding:20px 8px;}
+
+  .avatar-picker-row{display:flex;justify-content:center;margin-top:4px;}
+  .avatar-pick{
+    width:92px;height:92px;border-radius:50%;border:none;background:var(--bg);color:var(--text-faint);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0;
+  }
+  .avatar-pick img{width:100%;height:100%;object-fit:cover;}
+  .avatar-pick svg{width:34px;height:34px;}
+  .avatar-actions{display:flex;justify-content:center;gap:14px;margin-top:8px;}
+  .linklike{background:none;border:none;color:var(--accent);font-size:.78rem;font-weight:600;cursor:pointer;padding:4px;font-family:inherit;}
+  .linklike.danger{color:var(--danger);}
+
+  #cropStage{
+    position:relative;width:260px;height:260px;max-width:100%;margin:12px auto 4px;
+    border-radius:50%;overflow:hidden;background:#111;touch-action:none;cursor:grab;
+    box-shadow:0 0 0 3px var(--border);
+  }
+  #cropStage.dragging{cursor:grabbing;}
+  #cropImg{position:absolute;top:0;left:0;user-select:none;pointer-events:none;}
+  #cropZoom{width:100%;margin-top:10px;}
+
+  .rec-avatar{
+    width:38px;height:38px;border-radius:50%;flex-shrink:0;overflow:hidden;
+    background:var(--border);color:var(--text-faint);display:flex;align-items:center;justify-content:center;
+  }
+  .rec-avatar img{width:100%;height:100%;object-fit:cover;}
+  .rec-avatar svg{width:18px;height:18px;}
+  .rec-name.contact-matched{color:var(--text);}
+  #fileInput{display:none;}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <div class="title">
+      <b>הקלטות ימות המשיח</b>
+      <span id="extLabel">שלוחה —</span>
+    </div>
+    <div class="actions">
+      <button class="icon" id="refreshBtn" title="רענון" aria-label="רענון">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+      <button class="icon" id="contactsBtn" title="אנשי קשר" aria-label="אנשי קשר">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </button>
+      <button class="icon" id="settingsBtn" title="הגדרות" aria-label="הגדרות">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div id="list">
+    <div class="status-line" id="statusLine">פותחים הגדרות כדי להתחבר…</div>
+  </div>
+
+  <div id="bottombar">
+    <button class="attach" id="uploadBtn" title="העלאת קובץ שמע" aria-label="העלאת קובץ שמע">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+    </button>
+    <input type="file" id="fileInput" accept="audio/*">
+    <div id="placeholderText">לחצו על המיקרופון כדי להקליט הודעה חדשה</div>
+    <div id="recTimer"><span class="dot"></span><span id="recTimerText">00:00</span></div>
+    <button id="micBtn" title="הקלטה" aria-label="הקלטה">
+      <svg id="micIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </button>
+  </div>
+</div>
+
+<div id="settingsOverlay" class="ov">
+  <div class="ov-box">
+    <h2>חיבור למערכת ימות המשיח</h2>
+    <div class="sub">פרטי החיבור נשמרים רק בדפדפן שלכם (localStorage). אנשי הקשר נשמרים בגיליון Google Sheets משותף לפי הטוקן.</div>
+
+    <label for="tokenInput">טוקן (מספר מערכת:סיסמה)</label>
+    <input type="text" id="tokenInput" placeholder="0771234567:1234" dir="ltr">
+
+    <label for="extInput">מספר שלוחה</label>
+    <input type="text" id="extInput" placeholder="1" dir="ltr" value="1">
+    <div class="hint">הנתיב שממנו יישלפו ההקלטות: ivr2:/&lt;שלוחה&gt;/. שלוש ההקלטות האחרונות ברשימה (הקלטות מערכת) מוסתרות אוטומטית. מספר שולח מזוהה אוטומטית כאשר שם הקובץ בפורמט Phone-...-Date-... (תלוי בהגדרות השלוחה), ובנוסף מנסים לזהות אותו משדה נוסף בתשובת השרת אם קיים כזה.</div>
+
+    <label for="tzintukPhoneInput">שליחת צינתוק בהקלטה חדשה (אופציונלי)</label>
+    <input type="text" id="tzintukPhoneInput" placeholder="מספר טלפון, השאירו ריק לביטול" dir="ltr">
+    <div class="hint">אם יוזן מספר, בכל הקלטה חדשה (מיקרופון או קובץ) תישלח אליו שיחת צינתוק דרך פקודת RunTzintuk. כדאי לוודא מול התיעוד העדכני של ימות המשיח שהפרמטרים תואמים לחשבון שלכם, ולעקוב אחר קונסולת הדפדפן (F12) אם השליחה לא מצליחה.</div>
+
+    <label for="tzintukCallerIdInput">זיהוי מתקשר לצינתוק (אופציונלי)</label>
+    <input type="text" id="tzintukCallerIdInput" placeholder="השאירו ריק לזיהוי ברירת מחדל" dir="ltr">
+
+    <div class="warn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>ה-API של ימות המשיח לא תמיד תומך בקריאות ישירות מהדפדפן (CORS). אם טעינה, מחיקה, העלאה או ציור גלי הקול נכשלים, ייתכן שיידרש שרת ביניים (proxy). הטוקן חשוף בכתובת הבקשה — מומלץ סיסמה ייעודית ולא סיסמת הניהול הראשית.</span>
+    </div>
+
+    <div class="btnrow">
+      <button class="secondary" id="closeSettingsBtn">סגירה</button>
+      <button class="primary" id="saveSettingsBtn">שמירה וטעינה</button>
+    </div>
+  </div>
+</div>
+
+<div id="contactsOverlay" class="ov">
+  <div class="ov-box">
+    <h2>אנשי קשר</h2>
+    <div class="sub">שם ותמונה יוצגו אוטומטית בהקלטות שמזוהות מהמספר שלהם. אנשי הקשר נשמרים בגיליון Google Sheets ונטענים לפי הטוקן, כך שהם משותפים לכל מכשיר שמתחבר איתו.</div>
+    <div id="contactsList"></div>
+    <div class="btnrow">
+      <button class="secondary" id="closeContactsBtn">סגירה</button>
+      <button class="primary" id="addContactBtn">איש קשר חדש</button>
+    </div>
+  </div>
+</div>
+
+<div id="contactEditOverlay" class="ov">
+  <div class="ov-box">
+    <h2 id="contactEditTitle">איש קשר חדש</h2>
+    <div class="avatar-picker-row">
+      <button type="button" id="avatarPickBtn" class="avatar-pick" aria-label="בחירת תמונת פרופיל">
+        <img id="avatarPreviewImg" alt="" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </button>
+    </div>
+    <input type="file" id="contactPhotoInput" accept="image/*" style="display:none;">
+    <div class="avatar-actions">
+      <button type="button" class="linklike" id="changePhotoBtn">הוספת/שינוי תמונה</button>
+      <button type="button" class="linklike danger" id="removePhotoBtn" style="display:none;">הסרת תמונה</button>
+    </div>
+
+    <label for="contactNameInput">שם</label>
+    <input type="text" id="contactNameInput" placeholder="לדוגמה: יוסי כהן">
+
+    <label for="contactPhoneInput">מספר טלפון</label>
+    <input type="text" id="contactPhoneInput" placeholder="050-1234567" dir="ltr">
+
+    <div class="btnrow">
+      <button class="secondary danger-text" id="deleteContactBtn" style="display:none;">מחיקה</button>
+      <button class="secondary" id="cancelContactEditBtn">ביטול</button>
+      <button class="primary" id="saveContactBtn">שמירה</button>
+    </div>
+  </div>
+</div>
+
+<div id="cropOverlay" class="ov">
+  <div class="ov-box" style="max-width:340px;">
+    <h2>חיתוך תמונה</h2>
+    <div class="sub">גררו למיקום הרצוי והשתמשו במחוון להגדלה/הקטנה</div>
+    <div id="cropStage">
+      <img id="cropImg" alt="" draggable="false">
+    </div>
+    <input type="range" id="cropZoom" min="1" max="3" step="0.01" value="1">
+    <div class="btnrow">
+      <button class="secondary" id="cropCancelBtn">ביטול</button>
+      <button class="primary" id="cropConfirmBtn">אישור חיתוך</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const BASE_URL = 'https://www.call2all.co.il/ym/api/';
+const LS_TOKEN = 'yemot_token';
+const LS_EXT = 'yemot_ext';
+const LS_TZINTUK_PHONE = 'yemot_tzintuk_phone';
+const LS_TZINTUK_CALLERID = 'yemot_tzintuk_callerid';
+const HIDE_LAST_N = 3;
+
+// ===== אנשי קשר - Google Sheets (דרך Apps Script Web App) =====
+const CONTACTS_API = 'https://script.google.com/macros/s/AKfycbydQSs5sD_F7KYI77gT8wayot9UeTdnxAfidz8eAp_ZS3dOw1jZsbuhjKHKxpBtpRaM/exec';
+
+// ===== העלאת תמונות - Cloudinary =====
+const CLOUDINARY_CLOUD_NAME = 'rpbok3l7';
+const CLOUDINARY_UPLOAD_PRESET = 'metailim';
+async function uploadToCloudinary(file){
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+    method: 'POST',
+    body: fd
+  });
+  if(!res.ok) throw new Error('שגיאת העלאה לקלאודינרי: ' + res.status);
+  const data = await res.json();
+  return data.secure_url;
+}
+const BAR_COUNT = 40;
+
+const listEl = document.getElementById('list');
+const extLabel = document.getElementById('extLabel');
+const settingsOverlay = document.getElementById('settingsOverlay');
+const tokenInput = document.getElementById('tokenInput');
+const extInput = document.getElementById('extInput');
+const tzintukPhoneInput = document.getElementById('tzintukPhoneInput');
+const tzintukCallerIdInput = document.getElementById('tzintukCallerIdInput');
+
+let activeAudio = null;
+let activePlayBtn = null;
+let activeSetPlayed = null;
+let audioCtx = null;
+
+function getToken(){ return localStorage.getItem(LS_TOKEN) || ''; }
+function getExt(){ return localStorage.getItem(LS_EXT) || '1'; }
+function getTzintukPhone(){ return localStorage.getItem(LS_TZINTUK_PHONE) || ''; }
+function getTzintukCallerId(){ return localStorage.getItem(LS_TZINTUK_CALLERID) || ''; }
+
+function openSettings(){
+  tokenInput.value = getToken();
+  extInput.value = getExt();
+  tzintukPhoneInput.value = getTzintukPhone();
+  tzintukCallerIdInput.value = getTzintukCallerId();
+  settingsOverlay.classList.add('open');
+}
+function closeSettings(){ settingsOverlay.classList.remove('open'); }
+
+document.getElementById('settingsBtn').onclick = openSettings;
+document.getElementById('closeSettingsBtn').onclick = closeSettings;
+document.getElementById('refreshBtn').onclick = loadRecordings;
+
+document.getElementById('saveSettingsBtn').onclick = () => {
+  const t = tokenInput.value.trim();
+  const e = extInput.value.trim() || '1';
+  if(!t){ alert('נא להזין טוקן'); return; }
+  localStorage.setItem(LS_TOKEN, t);
+  localStorage.setItem(LS_EXT, e);
+  localStorage.setItem(LS_TZINTUK_PHONE, tzintukPhoneInput.value.trim());
+  localStorage.setItem(LS_TZINTUK_CALLERID, tzintukCallerIdInput.value.trim());
+  closeSettings();
+  fetchContactsFromServer().then(loadRecordings);
+};
+
+// ===== צינתוק בהקלטה חדשה =====
+// שולח שיחת צינתוק דרך פקודת RunTzintuk של ימות המשיח. שם הפרמטר של המספר
+// המיועד (phone) מבוסס על מוסכמות שאר פקודות ה-API של ימות המשיח; אם השליחה
+// נכשלת, בדקו את השגיאה שמודפסת לקונסולה מול התיעוד העדכני בפורום המפתחים.
+async function sendTzintuk(){
+  const phone = getTzintukPhone();
+  if(!phone) return;
+  const token = getToken();
+  if(!token) return;
+  const params = new URLSearchParams({ token, phone });
+  const callerId = getTzintukCallerId();
+  if(callerId) params.set('callerId', callerId);
+  try{
+    const res = await fetch(BASE_URL + 'RunTzintuk?' + params.toString());
+    const data = await res.json();
+    if(data.responseStatus !== 'OK'){
+      console.warn('שליחת הצינתוק נכשלה:', data.message || data.responseStatus);
+    }
+  }catch(err){
+    console.warn('שגיאה בשליחת הצינתוק (ייתכן חסימת CORS):', err.message);
+  }
+}
+
+// ===== אנשי קשר =====
+const ICON_PERSON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+const ICON_PERSON_ADD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg>';
+const ICON_PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+
+const contactsOverlay = document.getElementById('contactsOverlay');
+const contactsList = document.getElementById('contactsList');
+const contactEditOverlay = document.getElementById('contactEditOverlay');
+const contactEditTitle = document.getElementById('contactEditTitle');
+const avatarPickBtn = document.getElementById('avatarPickBtn');
+const avatarPreviewImg = document.getElementById('avatarPreviewImg');
+const contactPhotoInput = document.getElementById('contactPhotoInput');
+const removePhotoBtn = document.getElementById('removePhotoBtn');
+const contactNameInput = document.getElementById('contactNameInput');
+const contactPhoneInput = document.getElementById('contactPhoneInput');
+const deleteContactBtn = document.getElementById('deleteContactBtn');
+
+// אנשי הקשר נטענים מהגיליון (לפי הטוקן) ומוחזקים בזיכרון בשביל רינדור מהיר וסינכרוני.
+let contactsCache = [];
+
+function getContacts(){ return contactsCache; }
+
+// טוען מחדש את אנשי הקשר של הטוקן הנוכחי מהגיליון (Apps Script Web App).
+async function fetchContactsFromServer(){
+  const token = getToken();
+  if(!token){ contactsCache = []; return contactsCache; }
+  try{
+    const url = CONTACTS_API + '?action=list&key=' + encodeURIComponent(token);
+    const res = await fetch(url);
+    const data = await res.json();
+    contactsCache = (data && data.ok && Array.isArray(data.contacts)) ? data.contacts : [];
+  }catch(err){
+    console.warn('שגיאה בטעינת אנשי קשר מהגיליון:', err.message);
+  }
+  return contactsCache;
+}
+
+// שומר איש קשר בודד בגיליון (הוספה/עדכון), ומעדכן את המטמון המקומי.
+async function saveContactToServer(contact){
+  const token = getToken();
+  const res = await fetch(CONTACTS_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' }, // נשאר text/plain כדי למנוע preflight/CORS מול Apps Script
+    body: JSON.stringify({
+      action: 'save',
+      key: token,
+      id: contact.id,
+      name: contact.name,
+      phone: contact.phone,
+      photo: contact.photo || ''
+    })
+  });
+  const data = await res.json();
+  if(!data || !data.ok) throw new Error((data && data.error) || 'שמירה נכשלה');
+  const idx = contactsCache.findIndex(c => c.id === contact.id);
+  if(idx !== -1) contactsCache[idx] = contact; else contactsCache.push(contact);
+}
+
+// מוחק איש קשר מהגיליון, ומעדכן את המטמון המקומי.
+async function deleteContactFromServer(id){
+  const token = getToken();
+  const res = await fetch(CONTACTS_API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'delete', key: token, id })
+  });
+  const data = await res.json();
+  if(!data || !data.ok) throw new Error((data && data.error) || 'מחיקה נכשלה');
+  contactsCache = contactsCache.filter(c => c.id !== id);
+}
+
+// משאיר רק את 9 הספרות האחרונות של המספר, כדי שהשוואה תצליח בלי קשר
+// לקידומת בינלאומית (972+) או לאפס המוביל.
+function normalizePhone(str){
+  const digits = String(str || '').replace(/\D/g, '');
+  return digits.slice(-9);
+}
+function findContactByPhone(phone){
+  const target = normalizePhone(phone);
+  if(!target) return null;
+  return getContacts().find(c => normalizePhone(c.phone) === target) || null;
+}
+
+function contactAvatarHTML(contact){
+  return contact && contact.photo
+    ? '<img src="' + contact.photo + '" alt="">'
+    : ICON_PERSON;
+}
+
+function renderContactsList(){
+  const contacts = getContacts();
+  contactsList.innerHTML = '';
+  if(contacts.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'empty-contacts';
+    empty.textContent = 'אין עדיין אנשי קשר. הוסיפו איש קשר כדי שהשם והתמונה יוצגו בהקלטות שלו.';
+    contactsList.appendChild(empty);
+    return;
+  }
+  contacts.slice().sort((a,b) => (a.name||'').localeCompare(b.name||'', 'he')).forEach(contact => {
+    const row = document.createElement('div');
+    row.className = 'contact-row';
+    row.innerHTML =
+      '<div class="c-avatar">' + contactAvatarHTML(contact) + '</div>' +
+      '<div class="c-info">' +
+        '<div class="c-name"></div>' +
+        '<div class="c-phone"></div>' +
+      '</div>' +
+      '<button type="button" class="delete-btn" aria-label="עריכה">' + ICON_PENCIL + '</button>';
+    row.querySelector('.c-name').textContent = contact.name || '(ללא שם)';
+    row.querySelector('.c-phone').textContent = contact.phone || '';
+    row.onclick = () => openContactEdit(contact.id);
+    contactsList.appendChild(row);
+  });
+}
+
+async function openContacts(){
+  contactsOverlay.classList.add('open');
+  contactsList.innerHTML = '<div class="empty-contacts">טוען אנשי קשר…</div>';
+  await fetchContactsFromServer();
+  renderContactsList();
+}
+function closeContacts(){ contactsOverlay.classList.remove('open'); }
+
+let editingContactId = null;
+let pendingAvatarPhoto = null; // dataURL שנבחר בעורך התמונה, טרם נשמר לאיש הקשר
+
+function openContactEdit(id, prefillPhone){
+  const contact = id ? getContacts().find(c => c.id === id) : null;
+  editingContactId = contact ? contact.id : null;
+  pendingAvatarPhoto = contact ? (contact.photo || null) : null;
+  contactEditTitle.textContent = contact ? 'עריכת איש קשר' : 'איש קשר חדש';
+  contactNameInput.value = contact ? contact.name || '' : '';
+  contactPhoneInput.value = contact ? (contact.phone || '') : (prefillPhone || '');
+  deleteContactBtn.style.display = contact ? '' : 'none';
+  refreshAvatarPreview();
+  closeContacts();
+  contactEditOverlay.classList.add('open');
+}
+function closeContactEdit(){ contactEditOverlay.classList.remove('open'); }
+
+function refreshAvatarPreview(){
+  if(pendingAvatarPhoto){
+    avatarPreviewImg.src = pendingAvatarPhoto;
+    avatarPreviewImg.style.display = 'block';
+    removePhotoBtn.style.display = '';
+  } else {
+    avatarPreviewImg.style.display = 'none';
+    avatarPreviewImg.src = '';
+    removePhotoBtn.style.display = 'none';
+  }
+}
+
+document.getElementById('contactsBtn').onclick = openContacts;
+document.getElementById('closeContactsBtn').onclick = closeContacts;
+document.getElementById('addContactBtn').onclick = () => openContactEdit(null);
+document.getElementById('cancelContactEditBtn').onclick = closeContactEdit;
+avatarPickBtn.onclick = () => contactPhotoInput.click();
+document.getElementById('changePhotoBtn').onclick = () => contactPhotoInput.click();
+removePhotoBtn.onclick = () => { pendingAvatarPhoto = null; refreshAvatarPreview(); };
+
+const saveContactBtn = document.getElementById('saveContactBtn');
+saveContactBtn.onclick = async () => {
+  const name = contactNameInput.value.trim();
+  const phone = contactPhoneInput.value.trim();
+  if(!name){ alert('נא להזין שם'); return; }
+  if(!phone){ alert('נא להזין מספר טלפון'); return; }
+  const id = editingContactId || ((window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'c' + Date.now() + Math.random().toString(16).slice(2));
+  const contact = { id, name, phone, photo: pendingAvatarPhoto || '' };
+  saveContactBtn.disabled = true;
+  saveContactBtn.textContent = 'שומר…';
+  try{
+    await saveContactToServer(contact);
+    closeContactEdit();
+    loadRecordings();
+  }catch(err){
+    alert('שגיאה בשמירת איש הקשר: ' + err.message);
+  }finally{
+    saveContactBtn.disabled = false;
+    saveContactBtn.textContent = 'שמירה';
+  }
+};
+
+deleteContactBtn.onclick = async () => {
+  if(!editingContactId) return;
+  const ok = confirm('למחוק את איש הקשר?');
+  if(!ok) return;
+  try{
+    await deleteContactFromServer(editingContactId);
+    closeContactEdit();
+    loadRecordings();
+  }catch(err){
+    alert('שגיאה במחיקת איש הקשר: ' + err.message);
+  }
+};
+
+// ===== חיתוך תמונת פרופיל =====
+const cropOverlay = document.getElementById('cropOverlay');
+const cropStage = document.getElementById('cropStage');
+const cropImg = document.getElementById('cropImg');
+const cropZoom = document.getElementById('cropZoom');
+const CROP_STAGE_SIZE = 260;
+const CROP_OUTPUT_SIZE = 320;
+
+let cropState = null; // { naturalW, naturalH, coverScale, zoom, x, y }
+
+function openCropper(imageDataUrl){
+  cropImg.onload = () => {
+    const naturalW = cropImg.naturalWidth;
+    const naturalH = cropImg.naturalHeight;
+    const coverScale = CROP_STAGE_SIZE / Math.min(naturalW, naturalH);
+    cropState = { naturalW, naturalH, coverScale, zoom: 1, x: 0, y: 0 };
+    cropZoom.value = '1';
+    applyCropTransform(true);
+    cropOverlay.classList.add('open');
+  };
+  cropImg.src = imageDataUrl;
+}
+function closeCropper(){
+  cropOverlay.classList.remove('open');
+  cropState = null;
+}
+
+function applyCropTransform(recenter){
+  if(!cropState) return;
+  const s = cropState.coverScale * cropState.zoom;
+  const w = cropState.naturalW * s;
+  const h = cropState.naturalH * s;
+  if(recenter){
+    cropState.x = (CROP_STAGE_SIZE - w) / 2;
+    cropState.y = (CROP_STAGE_SIZE - h) / 2;
+  } else {
+    const minX = CROP_STAGE_SIZE - w, maxX = 0;
+    const minY = CROP_STAGE_SIZE - h, maxY = 0;
+    cropState.x = Math.min(maxX, Math.max(minX, cropState.x));
+    cropState.y = Math.min(maxY, Math.max(minY, cropState.y));
+  }
+  cropImg.style.width = w + 'px';
+  cropImg.style.height = h + 'px';
+  cropImg.style.transform = 'translate(' + cropState.x + 'px,' + cropState.y + 'px)';
+}
+
+cropZoom.oninput = () => {
+  if(!cropState) return;
+  cropState.zoom = parseFloat(cropZoom.value);
+  applyCropTransform(false);
+};
+
+// גרירה לבחירת האזור הרצוי בתמונה (עכבר ומגע כאחד דרך Pointer Events)
+let dragStart = null;
+cropStage.addEventListener('pointerdown', (e) => {
+  if(!cropState) return;
+  dragStart = { x: e.clientX, y: e.clientY, origX: cropState.x, origY: cropState.y };
+  cropStage.classList.add('dragging');
+  cropStage.setPointerCapture(e.pointerId);
+});
+cropStage.addEventListener('pointermove', (e) => {
+  if(!dragStart || !cropState) return;
+  cropState.x = dragStart.origX + (e.clientX - dragStart.x);
+  cropState.y = dragStart.origY + (e.clientY - dragStart.y);
+  applyCropTransform(false);
+});
+function endDrag(){ dragStart = null; cropStage.classList.remove('dragging'); }
+cropStage.addEventListener('pointerup', endDrag);
+cropStage.addEventListener('pointercancel', endDrag);
+
+document.getElementById('cropCancelBtn').onclick = () => {
+  closeCropper();
+  contactPhotoInput.value = '';
+};
+
+const cropConfirmBtn = document.getElementById('cropConfirmBtn');
+cropConfirmBtn.onclick = () => {
+  if(!cropState) return;
+  const s = cropState.coverScale * cropState.zoom;
+  const sx = -cropState.x / s;
+  const sy = -cropState.y / s;
+  const sSize = CROP_STAGE_SIZE / s;
+  const canvas = document.createElement('canvas');
+  canvas.width = CROP_OUTPUT_SIZE;
+  canvas.height = CROP_OUTPUT_SIZE;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(cropImg, sx, sy, sSize, sSize, 0, 0, CROP_OUTPUT_SIZE, CROP_OUTPUT_SIZE);
+
+  cropConfirmBtn.disabled = true;
+  cropConfirmBtn.textContent = 'מעלה תמונה…';
+  canvas.toBlob(async (blob) => {
+    try{
+      const url = await uploadToCloudinary(blob);
+      pendingAvatarPhoto = url; // נשמר כ-URL של קלאודינרי, לא כ-base64
+      refreshAvatarPreview();
+      closeCropper();
+      contactPhotoInput.value = '';
+    }catch(err){
+      alert('שגיאה בהעלאת התמונה: ' + err.message);
+    }finally{
+      cropConfirmBtn.disabled = false;
+      cropConfirmBtn.textContent = 'אישור חיתוך';
+    }
+  }, 'image/jpeg', 0.9);
+};
+
+contactPhotoInput.onchange = () => {
+  const file = contactPhotoInput.files && contactPhotoInput.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => openCropper(reader.result);
+  reader.readAsDataURL(file);
+};
+
+const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+const ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
+const ICON_MIC = document.getElementById('micIcon').outerHTML;
+const ICON_STOP = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+const ICON_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+
+function setStatus(msg, isError){
+  if(activeAudio){ activeAudio.pause(); activeAudio = null; activePlayBtn = null; activeSetPlayed = null; }
+  listEl.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'status-line' + (isError ? ' error' : '');
+  div.textContent = msg;
+  listEl.appendChild(div);
+}
+
+function extPath(ext){
+  return 'ivr2:/' + ext.replace(/^\/+|\/+$/g,'') + '/';
+}
+
+// זיהוי מספר שולח + תאריך משם קובץ בפורמט Phone-XXXXXXXXXX-Date-YYYY-MM-DD-HH-MM-SS
+function parsePhoneAndDate(name){
+  const m = (name || '').match(/Phone[-_](\d+)[-_]Date[-_](\d{4}[-_]\d{2}[-_]\d{2}[-_]\d{2}[-_]\d{2}[-_]\d{2})/i);
+  if(!m) return null;
+  const parts = m[2].split(/[-_]/);
+  const dateLabel = parts.length === 6
+    ? parts[2] + '/' + parts[1] + '/' + parts[0] + ' ' + parts[3] + ':' + parts[4]
+    : m[2];
+  return { phone: m[1], date: dateLabel };
+}
+
+// גיבוי לזיהוי מספר שולח: חיפוש כללי של שדה שנראה כמו מספר טלפון/מזהה מתקשר
+// באובייקט הקובץ שמוחזר מהשרת, למקרה ששם הקובץ עצמו לא בפורמט Phone-...-Date-...
+function extractPhoneFallback(file){
+  const phoneKeyPattern = /^(phone|callerid|caller_id|calleridnum|ani|src|from|number|tel)$/i;
+  for(const key of Object.keys(file)){
+    if(!phoneKeyPattern.test(key)) continue;
+    const raw = file[key];
+    if(!raw) continue;
+    const digits = String(raw).replace(/\D/g, '');
+    if(digits.length >= 7) return digits;
+  }
+  return null;
+}
+
+// חיפוש כללי של שדה תאריך באובייקט הקובץ, כגיבוי כאשר אין דפוס Phone/Date בשם
+function extractDateLabel(file){
+  for(const key of Object.keys(file)){
+    if(/date|time/i.test(key) && typeof file[key] === 'string' && file[key].length >= 8){
+      return file[key];
+    }
+  }
+  return null;
+}
+
+function fmtTime(sec){
+  if(!isFinite(sec) || sec < 0) sec = 0;
+  const m = Math.floor(sec/60);
+  const s = Math.floor(sec%60);
+  return m + ':' + String(s).padStart(2,'0');
+}
+
+async function loadRecordings(){
+  const token = getToken();
+  const ext = getExt();
+  extLabel.textContent = 'שלוחה ' + ext;
+
+  if(!token){
+    setStatus('לחצו על הגדרות למעלה כדי להזין טוקן ומספר שלוחה.');
+    return;
+  }
+
+  setStatus('טוען הקלטות…');
+
+  const url = BASE_URL + 'GetIVR2Dir?token=' + encodeURIComponent(token) + '&path=' + encodeURIComponent(extPath(ext));
+
+  let data;
+  try{
+    const res = await fetch(url);
+    data = await res.json();
+  }catch(err){
+    setStatus(
+      'שגיאה בטעינת ההקלטות.\n' +
+      'ייתכן שזו חסימת CORS של שרת ימות המשיח, או בעיית רשת.\n' +
+      'פרטים טכניים: ' + err.message,
+      true
+    );
+    return;
+  }
+
+  if(data.responseStatus !== 'OK'){
+    setStatus('שגיאה מהשרת: ' + (data.message || data.responseStatus), true);
+    return;
+  }
+
+  let files = (data.files || []).filter(f => f.fileType === 'AUDIO' || f.fileType === 'TTS');
+
+  files.sort((a,b) => {
+    const na = parseInt((a.name || '').match(/\d+/), 10);
+    const nb = parseInt((b.name || '').match(/\d+/), 10);
+    if(!isNaN(na) && !isNaN(nb)) return na - nb;
+    return (a.name||'').localeCompare(b.name||'');
+  });
+
+  if(files.length > HIDE_LAST_N){
+    files = files.slice(0, files.length - HIDE_LAST_N);
+  } else {
+    files = [];
+  }
+
+  if(files.length === 0){
+    setStatus('אין הקלטות להצגה בשלוחה ' + ext + '.');
+    return;
+  }
+
+  listEl.innerHTML = '';
+  for(const file of files){
+    listEl.appendChild(buildRecItem(file, token, ext));
+  }
+  // פתיחה בסוף הרשימה - ההקלטה האחרונה תמיד גלויה
+  listEl.scrollTop = listEl.scrollHeight;
+}
+
+// ===== גל קול =====
+function getAudioCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function pseudoWaveform(seedStr){
+  let seed = 0;
+  for(let i=0;i<seedStr.length;i++) seed = (seed*31 + seedStr.charCodeAt(i)) >>> 0;
+  const bars = [];
+  for(let i=0;i<BAR_COUNT;i++){
+    seed = (seed*1103515245 + 12345) >>> 0;
+    const v = ((seed >>> 8) % 1000)/1000;
+    // דפוס גלי מדומה, לא מחושב מהאודיו בפועל - שימוש רק כאשר קריאת הקובץ נחסמת (למשל CORS)
+    bars.push(0.18 + v*0.75);
+  }
+  return bars;
+}
+
+async function computeWaveform(url){
+  try{
+    const res = await fetch(url);
+    if(!res.ok) throw new Error('http ' + res.status);
+    const buf = await res.arrayBuffer();
+    const ctx = getAudioCtx();
+    const audioBuf = await ctx.decodeAudioData(buf.slice(0));
+    const raw = audioBuf.getChannelData(0);
+    const blockSize = Math.max(1, Math.floor(raw.length / BAR_COUNT));
+    const peaks = [];
+    for(let i=0;i<BAR_COUNT;i++){
+      let sum = 0;
+      const start = i*blockSize;
+      for(let j=0;j<blockSize;j++){ sum += Math.abs(raw[start+j] || 0); }
+      peaks.push(sum/blockSize);
+    }
+    const max = Math.max(...peaks, 0.0001);
+    return peaks.map(p => Math.max(0.12, p/max));
+  }catch(err){
+    return null;
+  }
+}
+
+const waveformObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if(entry.isIntersecting && entry.target._loadWaveform){
+      entry.target._loadWaveform();
+      entry.target._loadWaveform = null;
+      waveformObserver.unobserve(entry.target);
+    }
+  });
+}, {root: listEl, threshold: 0.15});
+
+function buildRecItem(file, token, ext){
+  const item = document.createElement('div');
+  item.className = 'rec-item';
+
+  const playBtn = document.createElement('button');
+  playBtn.className = 'play-btn';
+  playBtn.innerHTML = ICON_PLAY;
+  playBtn.setAttribute('aria-label', 'נגן');
+
+  const info = document.createElement('div');
+  info.className = 'rec-info';
+
+  const top = document.createElement('div');
+  top.className = 'rec-top';
+  const name = document.createElement('span');
+  name.className = 'rec-name';
+  name.textContent = file.name || '(ללא שם)';
+  top.appendChild(name);
+
+  const phoneInfo = parsePhoneAndDate(file.name);
+  const fallbackPhone = phoneInfo ? null : extractPhoneFallback(file);
+  const matchedPhone = phoneInfo ? phoneInfo.phone : fallbackPhone;
+  const contact = matchedPhone ? findContactByPhone(matchedPhone) : null;
+  const genericDate = extractDateLabel(file);
+
+  if(contact){
+    name.textContent = contact.name;
+    name.classList.add('contact-matched');
+    const dateOnly = phoneInfo ? phoneInfo.date : genericDate;
+    if(dateOnly){
+      const metaEl = document.createElement('span');
+      metaEl.className = 'rec-meta';
+      metaEl.textContent = dateOnly;
+      top.appendChild(metaEl);
+    }
+  } else if(phoneInfo || fallbackPhone || genericDate){
+    const metaEl = document.createElement('span');
+    metaEl.className = 'rec-meta';
+    metaEl.textContent = phoneInfo
+      ? (phoneInfo.phone + ' · ' + phoneInfo.date)
+      : fallbackPhone
+        ? (genericDate ? (fallbackPhone + ' · ' + genericDate) : fallbackPhone)
+        : genericDate;
+    top.appendChild(metaEl);
+  }
+  info.appendChild(top);
+
+  const waveRow = document.createElement('div');
+  waveRow.className = 'rec-wave-row';
+
+  const waveform = document.createElement('div');
+  waveform.className = 'waveform';
+  waveform.tabIndex = 0;
+  const bars = [];
+  const initialPeaks = pseudoWaveform(file.name || String(Math.random()));
+  initialPeaks.forEach(p => {
+    const bar = document.createElement('div');
+    bar.className = 'wf-bar';
+    bar.style.height = Math.round(p*28) + 'px';
+    waveform.appendChild(bar);
+    bars.push(bar);
+  });
+
+  function setPeaks(peaks){
+    peaks.forEach((p,i) => { if(bars[i]) bars[i].style.height = Math.round(p*28) + 'px'; });
+  }
+  function setPlayedRatio(ratio){
+    ratio = Math.max(0, Math.min(1, ratio || 0));
+    const exact = ratio * BAR_COUNT;
+    const cut = Math.floor(exact);
+    const frac = exact - cut; // התקדמות חלקית בתוך הפס הנוכחי, למעבר חלק בלי קפיצות
+    bars.forEach((b,i) => {
+      if(i < cut){
+        b.classList.add('played');
+        b.style.background = '';
+      } else if(i === cut && frac > 0){
+        b.classList.remove('played');
+        const pct = (frac*100).toFixed(1) + '%';
+        b.style.background = 'linear-gradient(to left, var(--accent) ' + pct + ', #DDE0E6 ' + pct + ')';
+      } else {
+        b.classList.remove('played');
+        b.style.background = '';
+      }
+    });
+  }
+
+  const timeLabel = document.createElement('span');
+  timeLabel.className = 'rec-time';
+  timeLabel.textContent = '0:00';
+
+  waveRow.appendChild(waveform);
+  waveRow.appendChild(timeLabel);
+  info.appendChild(waveRow);
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'delete-btn';
+  deleteBtn.innerHTML = ICON_TRASH;
+  deleteBtn.setAttribute('aria-label', 'מחיקת הקלטה');
+
+  const avatar = document.createElement('div');
+  avatar.className = 'rec-avatar';
+  avatar.innerHTML = contactAvatarHTML(contact);
+
+  item.appendChild(avatar);
+  item.appendChild(playBtn);
+  item.appendChild(info);
+  item.appendChild(deleteBtn);
+
+  const src = BASE_URL + 'DownloadFile?token=' + encodeURIComponent(token) +
+              '&path=' + encodeURIComponent(extPath(ext) + file.name);
+
+  // טעינת גל קול אמיתי כאשר הפריט נכנס לתצוגה. אם הקריאה נחסמת (למשל CORS)
+  // נשאר הדפוס המדומה שכבר מוצג, כדי שהתצוגה תמיד תיראה כמו הודעה קולית.
+  item._loadWaveform = async () => {
+    const peaks = await computeWaveform(src);
+    if(peaks) setPeaks(peaks);
+  };
+  waveformObserver.observe(item);
+
+  let audio = null;
+  let waveRafId = null;
+
+  // עדכון הגל הרץ בכל פריים (במקום להסתמך רק על אירוע timeupdate הדליל),
+  // כדי שהמילוי יתקדם בצורה חלקה במקום לקפוץ כמה פסים בבת אחת.
+  function stepWaveform(){
+    if(!audio || audio.paused) { waveRafId = null; return; }
+    setPlayedRatio(audio.duration ? audio.currentTime/audio.duration : 0);
+    waveRafId = requestAnimationFrame(stepWaveform);
+  }
+
+  function ensureAudio(){
+    if(audio) return audio;
+    audio = new Audio(src);
+    audio.preload = 'none';
+    audio.addEventListener('loadedmetadata', () => { if(audio.paused) timeLabel.textContent = fmtTime(audio.duration); });
+    audio.addEventListener('timeupdate', () => {
+      timeLabel.textContent = fmtTime(audio.currentTime);
+    });
+    audio.addEventListener('ended', () => {
+      playBtn.innerHTML = ICON_PLAY;
+      setPlayedRatio(0);
+      timeLabel.textContent = fmtTime(audio.duration);
+    });
+    return audio;
+  }
+
+  playBtn.onclick = () => {
+    ensureAudio();
+    if(activeAudio && activeAudio !== audio){
+      activeAudio.pause();
+      if(activePlayBtn) activePlayBtn.innerHTML = ICON_PLAY;
+      if(activeSetPlayed) activeSetPlayed(0);
+    }
+    if(audio.paused){
+      audio.play();
+      playBtn.innerHTML = ICON_PAUSE;
+      activeAudio = audio;
+      activePlayBtn = playBtn;
+      activeSetPlayed = setPlayedRatio;
+      if(waveRafId === null) waveRafId = requestAnimationFrame(stepWaveform);
+    } else {
+      audio.pause();
+      playBtn.innerHTML = ICON_PLAY;
+    }
+  };
+
+  waveform.onclick = (e) => {
+    ensureAudio();
+    if(!audio.duration) return;
+    const rect = waveform.getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / rect.width;
+    audio.currentTime = ratio * audio.duration;
+    setPlayedRatio(ratio);
+  };
+
+  deleteBtn.onclick = async () => {
+    const ok = confirm('למחוק את ההקלטה "' + (file.name || '') + '"? הפעולה אינה הפיכה.');
+    if(!ok) return;
+    deleteBtn.disabled = true;
+    const delUrl = BASE_URL + 'FileAction?token=' + encodeURIComponent(token) +
+                   '&action=delete&what=' + encodeURIComponent(extPath(ext) + file.name);
+    try{
+      const res = await fetch(delUrl);
+      const data = await res.json();
+      if(data.responseStatus === 'OK'){
+        if(activeAudio === audio){ activeAudio = null; activePlayBtn = null; activeSetPlayed = null; }
+        item.remove();
+      } else {
+        alert('שגיאה במחיקה: ' + (data.message || data.responseStatus));
+        deleteBtn.disabled = false;
+      }
+    }catch(err){
+      alert('שגיאה במחיקה (ייתכן חסימת CORS): ' + err.message);
+      deleteBtn.disabled = false;
+    }
+  };
+
+  return item;
+}
+
+const micBtn = document.getElementById('micBtn');
+const recTimer = document.getElementById('recTimer');
+const recTimerText = document.getElementById('recTimerText');
+const placeholderText = document.getElementById('placeholderText');
+const uploadBtn = document.getElementById('uploadBtn');
+const fileInput = document.getElementById('fileInput');
+
+let mediaRecorder = null;
+let recordedChunks = [];
+let recordStartTime = 0;
+let recordTimerInterval = null;
+let isRecording = false;
+
+micBtn.onclick = async () => {
+  if(!isRecording){
+    await startRecording();
+  } else {
+    stopRecording();
+  }
+};
+
+async function startRecording(){
+  if(!getToken()){
+    alert('נא להזין טוקן בהגדרות לפני הקלטה');
+    return;
+  }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = e => { if(e.data.size > 0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      const blob = new Blob(recordedChunks, {type: mediaRecorder.mimeType || 'audio/webm'});
+      uploadRecording(blob);
+    };
+    mediaRecorder.start();
+    isRecording = true;
+    micBtn.classList.add('recording');
+    micBtn.innerHTML = ICON_STOP;
+    placeholderText.style.display = 'none';
+    recTimer.style.display = 'flex';
+    recordStartTime = Date.now();
+    recordTimerInterval = setInterval(() => {
+      const secs = Math.floor((Date.now()-recordStartTime)/1000);
+      const mm = String(Math.floor(secs/60)).padStart(2,'0');
+      const ss = String(secs%60).padStart(2,'0');
+      recTimerText.textContent = mm+':'+ss;
+    }, 250);
+  }catch(err){
+    alert('לא ניתן לגשת למיקרופון: ' + err.message);
+  }
+}
+
+function stopRecording(){
+  if(mediaRecorder && isRecording){
+    mediaRecorder.stop();
+  }
+  isRecording = false;
+  micBtn.classList.remove('recording');
+  micBtn.innerHTML = ICON_MIC;
+  placeholderText.style.display = 'block';
+  recTimer.style.display = 'none';
+  clearInterval(recordTimerInterval);
+}
+
+uploadBtn.onclick = () => fileInput.click();
+fileInput.onchange = () => {
+  if(fileInput.files && fileInput.files[0]){
+    uploadRecording(fileInput.files[0]);
+    fileInput.value = '';
+  }
+};
+
+async function uploadRecording(blob){
+  const token = getToken();
+  const ext = getExt();
+  if(!token){ alert('נא להזין טוקן בהגדרות'); return; }
+
+  if(listEl.querySelector('.status-line')) listEl.innerHTML = '';
+
+  const item = document.createElement('div');
+  item.className = 'rec-item pending';
+  const statusText = document.createElement('span');
+  statusText.className = 'status-text';
+  statusText.textContent = 'שולח הקלטה חדשה…';
+  item.appendChild(statusText);
+  listEl.appendChild(item);
+  listEl.scrollTop = listEl.scrollHeight;
+
+  const guessedExt = (blob.type && blob.type.includes('wav')) ? 'wav'
+                    : (blob.type && blob.type.includes('mp3')) ? 'mp3'
+                    : 'webm';
+
+  const form = new FormData();
+  form.append('token', token);
+  form.append('path', extPath(ext));
+  form.append('convertAudio', '1');
+  form.append('autoNumbering', 'true');
+  form.append('file', blob, 'recording.' + guessedExt);
+
+  try{
+    const res = await fetch(BASE_URL + 'UploadFile', {method:'POST', body: form});
+    const data = await res.json();
+    if(data.responseStatus === 'OK'){
+      statusText.innerHTML = ICON_CHECK + ' נשלח בהצלחה';
+      statusText.style.display = 'flex';
+      statusText.style.alignItems = 'center';
+      statusText.style.gap = '6px';
+      sendTzintuk();
+      loadRecordings();
+    } else {
+      item.classList.add('error-item');
+      statusText.className = 'status-text error';
+      statusText.textContent = 'שגיאה בהעלאה: ' + (data.message || data.responseStatus);
+    }
+  }catch(err){
+    item.classList.add('error-item');
+    statusText.className = 'status-text error';
+    statusText.textContent = 'שגיאה בהעלאה (ייתכן חסימת CORS): ' + err.message;
+  }
+}
+
+if(!getToken()){
+  openSettings();
+} else {
+  fetchContactsFromServer().then(loadRecordings);
+}
+</script>
+</body>
+</html>
