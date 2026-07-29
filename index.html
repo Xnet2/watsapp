@@ -387,7 +387,7 @@ const LS_TZINTUK_CALLERID = 'yemot_tzintuk_callerid';
 const HIDE_LAST_N = 3;
 
 // ===== אנשי קשר - Google Sheets (דרך Apps Script Web App) =====
-const CONTACTS_API = 'https://script.google.com/macros/s/AKfycbydQSs5sD_F7KYI77gT8wayot9UeTdnxAfidz8eAp_ZS3dOw1jZsbuhjKHKxpBtpRaM/exec';
+const CONTACTS_API = 'https://sheetdb.io/api/v1/oihuitizk37d7';
 
 // ===== העלאת תמונות - Cloudinary =====
 const CLOUDINARY_CLOUD_NAME = 'rpbok3l7';
@@ -494,52 +494,61 @@ let contactsCache = [];
 
 function getContacts(){ return contactsCache; }
 
-// טוען מחדש את אנשי הקשר של הטוקן הנוכחי מהגיליון (Apps Script Web App).
+// טוען מחדש את אנשי הקשר של הטוקן הנוכחי מהגיליון (דרך SheetDB).
+// עמודות בגיליון: SystemKey | ContactId | Name | Phone | PhotoUrl | UpdatedAt
 async function fetchContactsFromServer(){
   const token = getToken();
   if(!token){ contactsCache = []; return contactsCache; }
   try{
-    const url = CONTACTS_API + '?action=list&key=' + encodeURIComponent(token);
+    const url = CONTACTS_API + '/search?SystemKey=' + encodeURIComponent(token);
     const res = await fetch(url);
-    const data = await res.json();
-    contactsCache = (data && data.ok && Array.isArray(data.contacts)) ? data.contacts : [];
+    const rows = await res.json();
+    contactsCache = Array.isArray(rows) ? rows.map(r => ({
+      id: r.ContactId, name: r.Name, phone: r.Phone, photo: r.PhotoUrl || ''
+    })) : [];
   }catch(err){
     console.warn('שגיאה בטעינת אנשי קשר מהגיליון:', err.message);
   }
   return contactsCache;
 }
 
-// שומר איש קשר בודד בגיליון (הוספה/עדכון), ומעדכן את המטמון המקומי.
+// שומר איש קשר בודד בגיליון (הוספה אם חדש, עדכון אם כבר קיים), ומעדכן את המטמון המקומי.
 async function saveContactToServer(contact){
   const token = getToken();
-  const res = await fetch(CONTACTS_API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' }, // נשאר text/plain כדי למנוע preflight/CORS מול Apps Script
-    body: JSON.stringify({
-      action: 'save',
-      key: token,
-      id: contact.id,
-      name: contact.name,
-      phone: contact.phone,
-      photo: contact.photo || ''
-    })
-  });
-  const data = await res.json();
-  if(!data || !data.ok) throw new Error((data && data.error) || 'שמירה נכשלה');
+  const row = {
+    SystemKey: token,
+    ContactId: contact.id,
+    Name: contact.name,
+    Phone: contact.phone,
+    PhotoUrl: contact.photo || '',
+    UpdatedAt: new Date().toISOString()
+  };
+  const exists = contactsCache.some(c => c.id === contact.id);
+  let res;
+  if(exists){
+    res = await fetch(CONTACTS_API + '/ContactId/' + encodeURIComponent(contact.id), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: row })
+    });
+  } else {
+    res = await fetch(CONTACTS_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: [row] })
+    });
+  }
+  if(!res.ok) throw new Error('שמירה נכשלה (' + res.status + ')');
   const idx = contactsCache.findIndex(c => c.id === contact.id);
   if(idx !== -1) contactsCache[idx] = contact; else contactsCache.push(contact);
 }
 
 // מוחק איש קשר מהגיליון, ומעדכן את המטמון המקומי.
 async function deleteContactFromServer(id){
-  const token = getToken();
-  const res = await fetch(CONTACTS_API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ action: 'delete', key: token, id })
+  const res = await fetch(CONTACTS_API + '/ContactId/' + encodeURIComponent(id), {
+    method: 'DELETE'
   });
-  const data = await res.json();
-  if(!data || !data.ok) throw new Error((data && data.error) || 'מחיקה נכשלה');
+  if(!res.ok) throw new Error('מחיקה נכשלה (' + res.status + ')');
   contactsCache = contactsCache.filter(c => c.id !== id);
 }
 
