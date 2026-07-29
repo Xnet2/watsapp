@@ -143,7 +143,7 @@
     min-width:0;
   }
   .wf-bar{
-    width:2px;min-width:2px;border-radius:2px;background:#D1D7DB;flex-shrink:0;
+    flex:1 1 0;min-width:1px;border-radius:2px;background:#D1D7DB;
   }
   .wf-bar.played{background:var(--accent);}
   /* עיגול-מחוון (thumb) שיושב על הגל בנקודת ההשמעה הנוכחית, בדיוק כמו בוואטסאפ.
@@ -188,12 +188,15 @@
   }
   .voice-avatar-badge svg{width:8px;height:8px;color:#fff;}
 
-  /* חלונית ריחוף קטנה עם שם/תאריך/שעה/משך, נפתחת רק כשעוברים עם העכבר מעל התמונה */
+  /* חלונית ריחוף קטנה עם שם/תאריך/שעה/משך, נפתחת רק כשעוברים עם העכבר מעל התמונה.
+     position:fixed (במקום absolute) כדי שהחלונית תמוקם ביחס לכל המסך ולא ביחס
+     לשורת ההודעה - כך היא לעולם לא נחתכת/מוסתרת ע"י ה-overflow של רשימת הפיד (#list),
+     גם כשההודעה נמצאת קרוב לקצה העליון של הרשימה. המיקום המדויק (left/bottom) נקבע
+     דינמית ב-JS לפי מיקום התמונה על המסך, ו-arrow-x קובע את יישור החץ הקטן בהתאם. */
   .voice-tooltip{
-    position:absolute;
-    bottom:calc(100% + 9px);
-    left:50%;
-    transform:translateX(-50%) translateY(4px);
+    position:fixed;
+    left:0;
+    bottom:0;
     background:#20272B;
     color:#fff;
     border-radius:10px;
@@ -206,20 +209,21 @@
     visibility:hidden;
     pointer-events:none;
     transition:opacity .15s ease, transform .15s ease;
-    z-index:40;
+    transform:translateY(4px);
+    z-index:1000;
     text-align:right;
   }
   .voice-tooltip::after{
     content:'';
     position:absolute;
     top:100%;
-    left:50%;
+    left:var(--arrow-x, 50%);
     transform:translateX(-50%);
     border:5px solid transparent;
     border-top-color:#20272B;
   }
-  .voice-avatar-wrap:hover .voice-tooltip{
-    opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);
+  .voice-tooltip.show{
+    opacity:1;visibility:visible;transform:translateY(0);pointer-events:auto;
   }
   .voice-tooltip b{display:block;font-size:.78rem;margin-bottom:3px;font-weight:600;}
   .voice-tooltip .tt-row{color:#C3CBD1;}
@@ -1374,6 +1378,27 @@ function buildRecItem(file, token, ext){
 
   avatarWrap.appendChild(avatar);
   avatarWrap.appendChild(tooltip);
+
+  // ממקמים את החלונית ביחס למסך (fixed) בכל פעם שעוברים עם העכבר מעל התמונה,
+  // כדי שהיא תמיד תופיע מעל התמונה במקום להיחתך ע"י גבול הרשימה הגוללת.
+  function positionVoiceTooltip(){
+    const rect = avatar.getBoundingClientRect();
+    const margin = 8;
+    const centerX = rect.left + rect.width/2;
+    const tw = tooltip.offsetWidth; // נמדד תקין גם כש-visibility:hidden
+    let left = centerX - tw/2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - tw - margin));
+    tooltip.style.left = left + 'px';
+    tooltip.style.bottom = (window.innerHeight - (rect.top - 9)) + 'px';
+    tooltip.style.setProperty('--arrow-x', (centerX - left) + 'px');
+  }
+  avatarWrap.addEventListener('mouseenter', () => {
+    positionVoiceTooltip();
+    tooltip.classList.add('show');
+  });
+  avatarWrap.addEventListener('mouseleave', () => {
+    tooltip.classList.remove('show');
+  });
 
   bubble.appendChild(avatarWrap);
   bubble.appendChild(playBtn);
