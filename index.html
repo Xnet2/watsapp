@@ -97,12 +97,14 @@
   .rec-item.error-item{background:#FFF5F5;}
 
   /* שורת הודעה: אווטאר בצד + עמודה (שם מעל, בועה מתחת). גודל הבועה קבוע לכל ההודעות. */
-  .rec-row{display:flex;align-items:flex-end;gap:8px;max-width:94%;align-self:flex-start;}
+  .rec-row{display:flex;align-items:flex-start;gap:5px;max-width:94%;align-self:flex-start;}
   /* הודעות "שלי" מיושרות לצד השמאלי (הפוך מהכיוון הכללי RTL), עם הפיכת סדר האווטאר/בועה, ובצבע ירקרק כמו הודעות יוצאות בוואטסאפ */
   .rec-row.rec-mine{align-self:flex-end;flex-direction:row-reverse;}
 
   .rec-col{display:flex;flex-direction:column;min-width:0;}
-  .rec-name-row{display:flex;align-items:baseline;gap:6px;margin:0 4px 3px;}
+  .rec-name-row{display:flex;align-items:baseline;gap:6px;margin:1px 2px 2px;}
+  /* בהודעות "שלי" השם עובר לאותו צד של האווטאר (שמאל), במקום להישאר בימין */
+  .rec-row.rec-mine .rec-name-row{flex-direction:row-reverse;}
   .rec-name{font-weight:600;font-size:.79rem;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;}
   .rec-name.contact-matched{color:var(--accent-dark);}
   .rec-meta{font-size:.7rem;color:var(--text-faint);flex-shrink:0;white-space:nowrap;display:flex;align-items:center;gap:6px;}
@@ -118,6 +120,7 @@
 
   /* הבועה עצמה - רוחב קבוע לכל ההודעות, בלי תלות באורך ההקלטה, כדי שלא יהיו בעיות תצוגה */
   .rec-bubble{
+    position:relative;
     width:300px;
     max-width:100%;
     background:var(--surface);
@@ -133,6 +136,19 @@
   .rec-bubble:hover{background:#FAFAF9;}
   .rec-row.rec-mine .rec-bubble{background:var(--mine-bg);}
   .rec-row.rec-mine .rec-bubble:hover{background:var(--mine-bg-hover);}
+  /* זנב קטן בין הבועה לאווטאר, כמו בוואטסאפ */
+  .rec-bubble::before{
+    content:'';
+    position:absolute;
+    top:10px;
+    width:0;height:0;
+    border-top:6px solid transparent;
+    border-bottom:6px solid transparent;
+  }
+  .rec-row:not(.rec-mine) .rec-bubble::before{right:-6px;border-left:6px solid var(--surface);}
+  .rec-row:not(.rec-mine) .rec-bubble:hover::before{border-left-color:#FAFAF9;}
+  .rec-row.rec-mine .rec-bubble::before{left:-6px;border-right:6px solid var(--mine-bg);}
+  .rec-row.rec-mine .rec-bubble:hover::before{border-right-color:var(--mine-bg-hover);}
 
   .play-btn{
     width:34px;height:34px;flex-shrink:0;border-radius:50%;
@@ -155,11 +171,12 @@
   .rec-time{font-size:.68rem;color:var(--text-faint);flex-shrink:0;min-width:30px;text-align:left;}
 
   .rec-avatar{
-    width:34px;height:34px;border-radius:50%;flex-shrink:0;overflow:hidden;margin-bottom:2px;
+    width:34px;height:34px;border-radius:50%;flex-shrink:0;overflow:hidden;
     background:var(--border);color:var(--text-faint);display:flex;align-items:center;justify-content:center;
   }
   .rec-avatar img{width:100%;height:100%;object-fit:cover;}
   .rec-avatar svg{width:15px;height:15px;}
+
 
   /* תפריט קליק ימני למחיקת הקלטה - במקום כפתור מחיקה קבוע על המסך */
   .ctx-menu{
