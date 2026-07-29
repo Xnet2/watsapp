@@ -6,7 +6,7 @@
 <title>הקלטות ימות המשיח</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#ECE5DD;
@@ -26,7 +26,7 @@
   *{box-sizing:border-box;}
   html,body{height:100%;margin:0;}
   body{
-    font-family:'Heebo',sans-serif;
+    font-family:'Assistant',sans-serif;
     background:var(--bg);
     color:var(--text);
     display:flex;
@@ -1118,8 +1118,23 @@ function fmtTime(sec){
   return m + ':' + String(s).padStart(2,'0');
 }
 
-// שולף את רשימת הקבצים מהשרת, ממיין ומסנן את שלוש ההקלטות האחרונות (הקלטות מערכת).
-// משמש גם לטעינה הראשונית וגם לבדיקה השקטה של הקלטות חדשות.
+// בודק אם שם קובץ נראה כמו הודעה קולית אמיתית ולא קובץ מערכת/תפריט (כמו M1253 או
+// M382776447 שלפעמים מופיעים בתיקייה, לא במסגרת הסדר הרץ הרגיל של שמות ההקלטות).
+// נחשב "הקלטה אמיתית" אם השם הוא:
+//  1. מספר רץ פשוט בלבד (כמו 425, 426, 427...) - הפורמט הנפוץ להודעות בשלוחה, או
+//  2. בפורמט Phone-...-Date-... (הודעות עם זיהוי שולח, כולל הקלטות שהועלו מהאתר הזה), או
+//  3. בפורמט recording-YYYY-MM-DD-HH-MM-SS (הקלטות שהועלו מהאתר בלי "מי אני" מוגדר).
+// כל שם אחר (כולל כזה שמתחיל באות, כמו קבצי מערכת) לא יוצג ברשימה.
+function isRealRecordingName(name){
+  if(parsePhoneAndDate(name)) return true;
+  const base = (name || '').replace(/\.[^.]+$/, '');
+  if(/^\d+$/.test(base)) return true;
+  if(/^recording-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}$/.test(base)) return true;
+  return false;
+}
+
+// שולף את רשימת הקבצים מהשרת, מסנן החוצה קבצי מערכת/תפריט לפי שם (ר' isRealRecordingName),
+// וממיין. משמש גם לטעינה הראשונית וגם לבדיקה השקטה של הקלטות חדשות.
 async function fetchFileList(token, ext){
   const url = BASE_URL + 'GetIVR2Dir?token=' + encodeURIComponent(token) + '&path=' + encodeURIComponent(extPath(ext));
   const res = await fetch(url);
