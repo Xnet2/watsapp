@@ -96,34 +96,19 @@
   .rec-item.pending{box-shadow:0 0 0 2px var(--accent) inset;}
   .rec-item.error-item{background:#FFF5F5;}
 
-  /* שורת הודעה: אווטאר בצד + עמודה (שם מעל, בועה מתחת). גודל הבועה קבוע לכל ההודעות. */
+  /* שורת הודעה: עמודה עם בועת ההודעה הקולית בלבד. גודל הבועה קבוע לכל ההודעות. */
   .rec-row{display:flex;align-items:flex-start;gap:5px;max-width:94%;align-self:flex-start;}
-  /* הודעות "שלי" מיושרות לצד השמאלי (הפוך מהכיוון הכללי RTL), עם הפיכת סדר האווטאר/בועה, ובצבע ירקרק כמו הודעות יוצאות בוואטסאפ */
-  .rec-row.rec-mine{align-self:flex-end;flex-direction:row-reverse;}
+  /* הודעות "שלי" מיושרות לצד השמאלי (הפוך מהכיוון הכללי RTL), ובצבע ירקרק כמו הודעות יוצאות בוואטסאפ */
+  .rec-row.rec-mine{align-self:flex-end;}
 
   .rec-col{display:flex;flex-direction:column;min-width:0;}
-  .rec-name-row{display:flex;align-items:baseline;gap:6px;margin:1px 2px 2px;}
-  /* בהודעות "שלי" השם עובר לאותו צד של האווטאר (שמאל), במקום להישאר בימין */
-  .rec-row.rec-mine .rec-name-row{flex-direction:row-reverse;}
-  .rec-name{font-weight:600;font-size:.79rem;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;}
-  .rec-name.contact-matched{color:var(--accent-dark);}
-  .rec-meta{font-size:.7rem;color:var(--text-faint);flex-shrink:0;white-space:nowrap;display:flex;align-items:center;gap:6px;}
-
-  .add-contact-btn{
-    width:18px;height:18px;flex-shrink:0;border-radius:50%;border:none;
-    background:#E9EDEF;color:var(--text-dim);cursor:pointer;
-    display:flex;align-items:center;justify-content:center;padding:0;
-    transition:background .15s,color .15s;
-  }
-  .add-contact-btn:hover{background:var(--accent);color:#fff;}
-  .add-contact-btn svg{width:11px;height:11px;}
 
   /* הבועה עצמה - רוחב קבוע לכל ההודעות, בלי תלות באורך ההקלטה, כדי שלא יהיו בעיות תצוגה.
      עיצוב "הודעה קולית" מדויק כמו בוואטסאפ: בועה מעוגלת לגמרי בלי זנב, עם תמונת השולח
      משובצת בתוך הבועה בצד אחד ותג מיקרופון קטן שיושב על פינת התמונה. */
   .rec-bubble{
     position:relative;
-    width:300px;
+    width:330px;
     max-width:100%;
     background:var(--surface);
     border:none;
@@ -154,10 +139,11 @@
   .rec-wave-row{flex:1;min-width:0;display:flex;align-items:center;gap:6px;}
   .waveform{
     position:relative;
-    flex:1;height:24px;display:flex;align-items:center;gap:2px;cursor:pointer;
+    flex:1;height:24px;display:flex;align-items:center;gap:1px;cursor:pointer;
+    min-width:0;
   }
   .wf-bar{
-    width:3px;min-width:3px;border-radius:3px;background:#D1D7DB;flex-shrink:0;
+    width:2px;min-width:2px;border-radius:2px;background:#D1D7DB;flex-shrink:0;
   }
   .wf-bar.played{background:var(--accent);}
   /* עיגול-מחוון (thumb) שיושב על הגל בנקודת ההשמעה הנוכחית, בדיוק כמו בוואטסאפ */
@@ -171,12 +157,13 @@
     pointer-events:none;
     transition:left .05s linear;
   }
-  .rec-time{font-size:.7rem;color:var(--text-faint);flex-shrink:0;min-width:30px;text-align:left;}
+  .rec-time{font-size:.7rem;color:var(--text-faint);flex-shrink:0;min-width:28px;text-align:left;}
 
   /* תמונת השולח המשובצת בתוך בועת ההודעה הקולית + תג מיקרופון קטן שרוכב על פינתה */
+  .voice-avatar-wrap{position:relative;flex-shrink:0;}
   .voice-avatar{
     position:relative;width:38px;height:38px;border-radius:50%;flex-shrink:0;
-    background:var(--border);color:var(--text-faint);
+    background:var(--border);color:var(--text-faint);cursor:pointer;
   }
   .voice-avatar-img{
     width:100%;height:100%;border-radius:50%;overflow:hidden;
@@ -184,19 +171,64 @@
   }
   .voice-avatar-img img{width:100%;height:100%;object-fit:cover;display:block;}
   .voice-avatar-img svg{width:16px;height:16px;}
+  /* התג יושב על הפינה הפנימית של התמונה, פונה לכיוון כפתור הנגן/הגל */
   .voice-avatar-badge{
-    position:absolute;bottom:-2px;right:-2px;
+    position:absolute;bottom:-2px;left:-2px;
     width:17px;height:17px;border-radius:50%;
     background:var(--accent);
     display:flex;align-items:center;justify-content:center;
     border:2px solid var(--surface);
   }
   .rec-row.rec-mine .voice-avatar-badge{
-    right:auto;left:-2px;
+    left:auto;right:-2px;
     border-color:var(--mine-bg);
     background:var(--accent-dark);
   }
   .voice-avatar-badge svg{width:8px;height:8px;color:#fff;}
+
+  /* חלונית ריחוף קטנה עם שם/תאריך/שעה/משך, נפתחת רק כשעוברים עם העכבר מעל התמונה */
+  .voice-tooltip{
+    position:absolute;
+    bottom:calc(100% + 9px);
+    left:50%;
+    transform:translateX(-50%) translateY(4px);
+    background:#20272B;
+    color:#fff;
+    border-radius:10px;
+    padding:9px 11px;
+    font-size:.72rem;
+    line-height:1.65;
+    white-space:nowrap;
+    box-shadow:0 6px 20px rgba(0,0,0,.28);
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transition:opacity .15s ease, transform .15s ease;
+    z-index:40;
+    text-align:right;
+  }
+  .voice-tooltip::after{
+    content:'';
+    position:absolute;
+    top:100%;
+    left:50%;
+    transform:translateX(-50%);
+    border:5px solid transparent;
+    border-top-color:#20272B;
+  }
+  .voice-avatar-wrap:hover .voice-tooltip{
+    opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);
+  }
+  .voice-tooltip b{display:block;font-size:.78rem;margin-bottom:3px;font-weight:600;}
+  .voice-tooltip .tt-row{color:#C3CBD1;}
+  .voice-tooltip .tt-dur{color:#fff;}
+  .voice-tooltip .tt-add{
+    display:flex;align-items:center;gap:4px;margin-top:6px;
+    background:none;border:none;color:var(--accent);
+    font-family:inherit;font-size:.72rem;font-weight:600;cursor:pointer;padding:0;
+    pointer-events:auto;
+  }
+  .voice-tooltip .tt-add svg{width:11px;height:11px;}
 
 
   /* תפריט קליק ימני למחיקת הקלטה - במקום כפתור מחיקה קבוע על המסך */
@@ -1160,7 +1192,7 @@ const waveformObserver = new IntersectionObserver((entries) => {
 }, {root: listEl, threshold: 0.15});
 
 function buildRecItem(file, token, ext){
-  // שורת ההודעה: אווטאר + עמודה (שם מעל, בועה מתחת) - בדיוק כמו בוואטסאפ.
+  // שורת ההודעה: עמודה עם בועת ההודעה הקולית בלבד - אין יותר שם קבוע מעל הבועה.
   const row = document.createElement('div');
   row.className = 'rec-row';
 
@@ -1172,13 +1204,6 @@ function buildRecItem(file, token, ext){
   const col = document.createElement('div');
   col.className = 'rec-col';
 
-  const nameRow = document.createElement('div');
-  nameRow.className = 'rec-name-row';
-  const name = document.createElement('span');
-  name.className = 'rec-name';
-  name.textContent = file.name || '(ללא שם)';
-  nameRow.appendChild(name);
-
   const phoneInfo = parsePhoneAndDate(file.name);
   const fallbackPhone = phoneInfo ? null : extractPhoneFallback(file);
   const matchedPhone = phoneInfo ? phoneInfo.phone : fallbackPhone;
@@ -1188,38 +1213,15 @@ function buildRecItem(file, token, ext){
   // אם ההקלטה שייכת לאיש הקשר שסומן כ"אני" - מיישרים לשמאל, כמו הודעות יוצאות בוואטסאפ.
   if(contact && contact.id === getMeContactId()) row.classList.add('rec-mine');
 
-  if(contact){
-    name.textContent = contact.name;
-    name.classList.add('contact-matched');
-    const dateOnly = phoneInfo ? phoneInfo.date : genericDate;
-    if(dateOnly){
-      const metaEl = document.createElement('span');
-      metaEl.className = 'rec-meta';
-      metaEl.textContent = dateOnly;
-      nameRow.appendChild(metaEl);
-    }
-  } else if(phoneInfo || fallbackPhone || genericDate){
-    const metaEl = document.createElement('span');
-    metaEl.className = 'rec-meta';
-    const metaText = document.createElement('span');
-    metaText.textContent = phoneInfo
-      ? (phoneInfo.phone + ' · ' + phoneInfo.date)
-      : fallbackPhone
-        ? (genericDate ? (fallbackPhone + ' · ' + genericDate) : fallbackPhone)
-        : genericDate;
-    metaEl.appendChild(metaText);
-    if(matchedPhone){
-      const addBtn = document.createElement('button');
-      addBtn.className = 'add-contact-btn';
-      addBtn.type = 'button';
-      addBtn.innerHTML = ICON_PLUS;
-      addBtn.setAttribute('aria-label', 'הוספה לאנשי קשר');
-      addBtn.onclick = (e) => { e.stopPropagation(); openContactEdit(null, matchedPhone); };
-      metaEl.appendChild(addBtn);
-    }
-    nameRow.appendChild(metaEl);
+  // אין יותר שם/תאריך קבועים מעל הבועה - כל הפרטים עוברים לחלונית ריחוף על תמונת השולח.
+  const fullDateStr = phoneInfo ? phoneInfo.date : genericDate;
+  let dateOnly = '', timeOnly = '';
+  if(fullDateStr){
+    const sp = fullDateStr.split(' ');
+    if(sp.length === 2){ dateOnly = sp[0]; timeOnly = sp[1]; }
+    else { dateOnly = fullDateStr; }
   }
-  col.appendChild(nameRow);
+  const displayName = contact ? contact.name : (matchedPhone || 'לא מזוהה');
 
   const bubble = document.createElement('div');
   bubble.className = 'rec-bubble';
@@ -1277,14 +1279,58 @@ function buildRecItem(file, token, ext){
   waveRow.appendChild(waveform);
   waveRow.appendChild(timeLabel);
 
-  // תמונת השולח משובצת בתוך הבועה עצמה, עם תג מיקרופון קטן על פינתה - בדיוק כמו הודעה קולית בוואטסאפ
+  // תמונת השולח משובצת בתוך הבועה עצמה, עם תג מיקרופון קטן על פינתה - בדיוק כמו הודעה קולית בוואטסאפ.
+  // מעבר עכבר על התמונה חושף חלונית קטנה עם השם, התאריך, השעה ומשך ההקלטה.
+  const avatarWrap = document.createElement('div');
+  avatarWrap.className = 'voice-avatar-wrap';
+
   const avatar = document.createElement('div');
   avatar.className = 'voice-avatar';
   avatar.innerHTML =
     '<div class="voice-avatar-img">' + contactAvatarHTML(contact) + '</div>' +
     '<span class="voice-avatar-badge">' + ICON_MIC + '</span>';
 
-  bubble.appendChild(avatar);
+  const tooltip = document.createElement('div');
+  tooltip.className = 'voice-tooltip';
+
+  const ttName = document.createElement('b');
+  ttName.textContent = displayName;
+  tooltip.appendChild(ttName);
+
+  if(dateOnly){
+    const r = document.createElement('div');
+    r.className = 'tt-row';
+    r.textContent = 'תאריך: ' + dateOnly;
+    tooltip.appendChild(r);
+  }
+  if(timeOnly){
+    const r = document.createElement('div');
+    r.className = 'tt-row';
+    r.textContent = 'שעה: ' + timeOnly;
+    tooltip.appendChild(r);
+  }
+  const durRow = document.createElement('div');
+  durRow.className = 'tt-row';
+  durRow.textContent = 'משך: ';
+  const durVal = document.createElement('span');
+  durVal.className = 'tt-dur';
+  durVal.textContent = '0:00';
+  durRow.appendChild(durVal);
+  tooltip.appendChild(durRow);
+
+  if(!contact && matchedPhone){
+    const addLink = document.createElement('button');
+    addLink.type = 'button';
+    addLink.className = 'tt-add';
+    addLink.innerHTML = ICON_PLUS + '<span>הוספה לאנשי קשר</span>';
+    addLink.onclick = (e) => { e.stopPropagation(); openContactEdit(null, matchedPhone); };
+    tooltip.appendChild(addLink);
+  }
+
+  avatarWrap.appendChild(avatar);
+  avatarWrap.appendChild(tooltip);
+
+  bubble.appendChild(avatarWrap);
   bubble.appendChild(playBtn);
   bubble.appendChild(waveRow);
   col.appendChild(bubble);
@@ -1298,7 +1344,10 @@ function buildRecItem(file, token, ext){
   // נשאר הדפוס המדומה שכבר מוצג, כדי שהתצוגה תמיד תיראה כמו הודעה קולית.
   row._loadWaveform = async () => {
     const result = await computeWaveform(src);
-    if(result) setPeaks(result.peaks);
+    if(result){
+      setPeaks(result.peaks);
+      if(result.duration) durVal.textContent = fmtTime(result.duration);
+    }
   };
   waveformObserver.observe(row);
 
@@ -1317,7 +1366,10 @@ function buildRecItem(file, token, ext){
     if(audio) return audio;
     audio = new Audio(src);
     audio.preload = 'none';
-    audio.addEventListener('loadedmetadata', () => { if(audio.paused) timeLabel.textContent = fmtTime(audio.duration); });
+    audio.addEventListener('loadedmetadata', () => {
+      if(audio.paused) timeLabel.textContent = fmtTime(audio.duration);
+      if(audio.duration) durVal.textContent = fmtTime(audio.duration);
+    });
     audio.addEventListener('timeupdate', () => {
       timeLabel.textContent = fmtTime(audio.currentTime);
     });
