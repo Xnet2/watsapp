@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>הקלטות ימות המשיח</title>
+<title>וואטסאפ פון</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -65,6 +65,9 @@
     flex-shrink:0;
   }
   header .title{display:flex;flex-direction:column;gap:2px;}
+  header .title-row{display:flex;align-items:center;gap:8px;}
+  header .app-logo{display:flex;flex-shrink:0;line-height:0;}
+  header .app-logo svg{display:block;}
   header .title b{font-size:1.05rem;font-weight:600;letter-spacing:.01em;}
   header .title span{font-size:.76rem;color:rgba(255,255,255,.75);font-weight:400;}
   header .actions{display:flex;gap:6px;}
@@ -397,7 +400,17 @@
 <div id="app">
   <header>
     <div class="title">
-      <b>הקלטות ימות המשיח</b>
+      <div class="title-row">
+        <span class="app-logo" aria-hidden="true">
+          <svg viewBox="0 0 40 40" width="26" height="26">
+            <circle cx="20" cy="20" r="19" fill="#25D366"/>
+            <path d="M20 8c-6.6 0-12 5.4-12 12 0 2.1.55 4.1 1.6 5.9L8 32l6.3-1.6c1.7.9 3.6 1.4 5.7 1.4 6.6 0 12-5.4 12-12S26.6 8 20 8z" fill="#fff"/>
+            <path d="M20 10.2c-5.4 0-9.8 4.4-9.8 9.8 0 1.9.55 3.7 1.5 5.2l.3.45-1 3.6 3.7-.97.45.27c1.5.9 3.2 1.4 5 1.4a9.8 9.8 0 1 0-.15-19.75z" fill="#25D366"/>
+            <path d="M16.4 14.6c-.25-.55-.5-.56-.73-.57l-.62-.01c-.22 0-.57.08-.87.4-.3.32-1.13 1.1-1.13 2.7s1.16 3.13 1.32 3.35c.16.22 2.24 3.58 5.53 4.88 2.73 1.08 3.29.86 3.88.81.6-.06 1.9-.78 2.17-1.53.27-.75.27-1.4.19-1.53-.08-.14-.3-.22-.62-.38-.32-.16-1.9-.94-2.2-1.04-.3-.11-.51-.16-.73.16-.22.32-.84 1.04-1.03 1.25-.19.22-.38.24-.7.08-.32-.16-1.36-.5-2.6-1.6-.96-.86-1.6-1.91-1.79-2.23-.19-.32-.02-.49.14-.65.14-.14.32-.38.48-.57.16-.19.22-.32.32-.54.11-.22.06-.4-.03-.57-.08-.16-.7-1.76-.99-2.4z" fill="#fff"/>
+          </svg>
+        </span>
+        <b>וואטסאפ פון</b>
+      </div>
       <span id="extLabel">שלוחה —</span>
     </div>
     <div class="actions">
@@ -695,25 +708,15 @@ function getMeContact(){
   return getContacts().find(c => c.id === id) || null;
 }
 
-// רשימת שמות קבצים שהועלו על-ידי מי שמכנה שם ("אני") מהאתר הזה - נשמרת מקומית לכל טוקן.
-// דרושה כי עם autoNumbering=true (ר' uploadRecording) ימות המשיח קובע לקובץ שם/מספר משלו
-// (כדי שההקלטה תיכנס לרצף הרגיל של השלוחה ותהיה ניתנת להשמעה בטלפון), ולכן אי אפשר יותר
-// לזהות "זו הקלטה שלי" לפי תבנית Phone-...-Date-... בשם הקובץ - זה נשמר כאן במקום זה.
-function selfUploadedKey(){ return 'yemot_self_uploaded:' + (getToken() || ''); }
-function getSelfUploadedNames(){
-  try{ return new Set(JSON.parse(localStorage.getItem(selfUploadedKey()) || '[]')); }
-  catch(e){ return new Set(); }
-}
-function addSelfUploadedName(name){
-  const set = getSelfUploadedNames();
-  set.add(name);
-  // שומרים רק את ה-200 האחרונים כדי שלא יצטבר לעד
-  const arr = Array.from(set).slice(-200);
-  localStorage.setItem(selfUploadedKey(), JSON.stringify(arr));
-}
 
 // אנשי הקשר נטענים מהגיליון (לפי הטוקן) ומוחזקים בזיכרון בשביל רינדור מהיר וסינכרוני.
 let contactsCache = [];
+
+// שיוך "מי שלח" עבור הקלטות שהועלו מהאתר הזה (ולא ניתן לזהות אותן משם הקובץ, כי
+// autoNumbering=true - ר' uploadRecording) - נשמר *באותו* גיליון SheetDB של אנשי הקשר,
+// כשורה מיוחדת עם ContactId בפורמט 'rec:<שם הקובץ>' (כדי לא להתנגש עם אנשי קשר אמיתיים).
+// כך השיוך משותף לכל מי שנכנס עם אותו טוקן/שלוחה - ולא רק מקומי לדפדפן שהעלה את ההקלטה.
+let recAttributionCache = [];
 
 function getContacts(){ return contactsCache; }
 
@@ -721,19 +724,58 @@ function getContacts(){ return contactsCache; }
 // עמודות בגיליון: SystemKey | ContactId | Name | Phone | PhotoUrl | UpdatedAt
 async function fetchContactsFromServer(){
   const token = getToken();
-  if(!token){ contactsCache = []; return contactsCache; }
+  if(!token){ contactsCache = []; recAttributionCache = []; return contactsCache; }
   try{
     const url = CONTACTS_API + '/search?SystemKey=' + encodeURIComponent(token);
     const res = await fetch(url);
     const rows = await res.json();
-    contactsCache = Array.isArray(rows) ? rows.map(r => ({
-      id: r.ContactId, name: r.Name, phone: r.Phone, photo: r.PhotoUrl || ''
-    })) : [];
+    const all = Array.isArray(rows) ? rows : [];
+    contactsCache = all
+      .filter(r => !String(r.ContactId||'').startsWith('rec:'))
+      .map(r => ({ id: r.ContactId, name: r.Name, phone: r.Phone, photo: r.PhotoUrl || '' }));
+    recAttributionCache = all
+      .filter(r => String(r.ContactId||'').startsWith('rec:'))
+      .map(r => ({ file: String(r.ContactId).slice(4), name: r.Name, phone: r.Phone, photo: r.PhotoUrl || '' }));
   }catch(err){
     console.warn('שגיאה בטעינת אנשי קשר מהגיליון:', err.message);
   }
   return contactsCache;
 }
+
+// מחזיר את פרטי השולח המשויכים לקובץ הקלטה שהועלה מהאתר הזה, אם נשמר שיוך כזה בגיליון.
+function getRecordingAttribution(fileName){
+  return recAttributionCache.find(r => r.file === fileName) || null;
+}
+
+// שומר בגיליון (משותף לכולם) מי שלח הקלטה שהועלתה מהאתר הזה - לפי מי שסומן כ"אני"
+// באנשי הקשר בזמן ההעלאה. נקרא מיד אחרי שמתגלה השם/מספר שימות המשיח קבע לקובץ בפועל.
+async function saveRecordingAttribution(fileName){
+  const me = getMeContact();
+  if(!me || !me.phone) return; // בלי איש קשר "אני" עם מספר טלפון, אין מה לשמור
+  const token = getToken();
+  const row = {
+    SystemKey: token,
+    ContactId: 'rec:' + fileName,
+    Name: me.name,
+    Phone: me.phone,
+    PhotoUrl: me.photo || '',
+    UpdatedAt: new Date().toISOString()
+  };
+  try{
+    const res = await fetch(CONTACTS_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: [row] })
+    });
+    if(res.ok){
+      recAttributionCache = recAttributionCache.filter(r => r.file !== fileName);
+      recAttributionCache.push({ file: fileName, name: me.name, phone: me.phone, photo: me.photo || '' });
+    }
+  }catch(err){
+    console.warn('שגיאה בשמירת שיוך שולח להקלטה:', err.message);
+  }
+}
+
 
 // שומר איש קשר בודד בגיליון (הוספה אם חדש, עדכון אם כבר קיים), ומעדכן את המטמון המקומי.
 async function saveContactToServer(contact){
@@ -1222,9 +1264,10 @@ async function loadRecordings(){
 // שולף את רשימת הקבצים העדכנית ומוסיף לרשימה המוצגת רק את מה שבאמת חדש (לפי renderedFileNames),
 // בלי לנקות/לטעון מחדש את כל מה שכבר מוצג. משמש גם לבדיקה השקטה ברקע וגם מיד אחרי העלאה
 // עצמית, כדי שלא תהיה קפיצת "טעינה מחדש" מיותרת בכל פעם שמעלים הקלטה.
-// markAsSelf=true (נקרא מיד אחרי uploadRecording בלבד) מסמן כל קובץ חדש שנמצא כ"הקלטה שלי"
-// לפני שהוא נבנה לתצוגה - כדי שה-mine styling יחול כבר מהרגע הראשון שהוא מוצג.
-async function appendNewRecordings(markAsSelf){
+// onNewFiles (נקרא רק מיד אחרי uploadRecording) - callback אסינכרוני שמקבל את הקבצים
+// החדשים ורץ *לפני* שהם נבנים לתצוגה - כדי לשמור שיוך שולח בשרת (ר' saveRecordingAttribution)
+// ושה-mine styling/שם השולח יחולו כבר מהרגע הראשון שההקלטה מוצגת, אצל כולם.
+async function appendNewRecordings(onNewFiles){
   const token = getToken();
   const ext = getExt();
   if(!token) return [];
@@ -1232,7 +1275,10 @@ async function appendNewRecordings(markAsSelf){
   const newFiles = files.filter(f => !renderedFileNames.has(f.name));
   if(newFiles.length === 0) return newFiles;
 
-  if(markAsSelf) newFiles.forEach(f => addSelfUploadedName(f.name));
+  if(onNewFiles){
+    try{ await onNewFiles(newFiles); }
+    catch(err){ console.warn('שגיאה בטיפול בקבצים חדשים:', err.message); }
+  }
 
   const wasAtBottom = (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) < 40;
 
@@ -1346,13 +1392,21 @@ function buildRecItem(file, token, ext){
   const matchedPhone = phoneInfo ? phoneInfo.phone : fallbackPhone;
   let contact = matchedPhone ? findContactByPhone(matchedPhone) : null;
   const genericDate = extractDateLabel(file);
-  const isSelfUploaded = getSelfUploadedNames().has(file.name);
+
+  // שיוך שולח שנשמר בשרת (משותף לכולם) עבור הקלטות שהועלו מהאתר הזה - ר' saveRecordingAttribution.
+  const attribution = contact ? null : getRecordingAttribution(file.name);
+  if(attribution && !contact){
+    // אם יש איש קשר תואם לפי המספר שנשמר בשיוך - עדיף אותו (תמונה/שם מעודכנים);
+    // אחרת נבנה איש קשר "וירטואלי" מתוך התמונה שנשמרה בזמן ההעלאה.
+    contact = findContactByPhone(attribution.phone) ||
+      { id: null, name: attribution.name, phone: attribution.phone, photo: attribution.photo };
+  }
+  const meContact = getMeContact();
+  const isMineByAttribution = !!(attribution && meContact && meContact.phone &&
+    normalizePhone(meContact.phone) === normalizePhone(attribution.phone));
 
   // אם ההקלטה שייכת לאיש הקשר שסומן כ"אני" - מיישרים לשמאל, כמו הודעות יוצאות בוואטסאפ.
-  // וכן אם זו הקלטה שהועלתה מהאתר הזה (מזוהה מקומית לפי שם הקובץ, ר' addSelfUploadedName) -
-  // כי מאז שהמעבר ל-autoNumbering=true בהעלאה, שם הקובץ עצמו כבר לא נושא Phone-...-Date-...
-  if(isSelfUploaded && !contact) contact = getMeContact();
-  if((contact && contact.id === getMeContactId()) || isSelfUploaded) row.classList.add('rec-mine');
+  if((contact && contact.id && contact.id === getMeContactId()) || isMineByAttribution) row.classList.add('rec-mine');
 
   // אין יותר שם/תאריך קבועים מעל הבועה - כל הפרטים עוברים לחלונית ריחוף על תמונת השולח.
   const fullDateStr = phoneInfo ? phoneInfo.date : genericDate;
@@ -1732,8 +1786,8 @@ async function uploadRecording(blob){
   // השלוחה (425, 426, 427...) שממנו הטלפון בפועל משמיע הודעות - כך שההקלטה הייתה מוצגת
   // באתר אבל לא ניתנת להשמעה בחיוג לשלוחה. לכן כעת מעלים עם autoNumbering=true (ימות המשיח
   // קובע בעצמו את המספר/שם הבא ברצף, ומ-convertAudio ממיר לפורמט תקין כמו שאר ההקלטות),
-  // וכדי לשמר את הזיהוי "זו הקלטה שלי" בתצוגה, השם נשמר מקומית ב-localStorage
-  // (ר' addSelfUploadedName) ולא בתוך שם הקובץ עצמו.
+  // וכדי לשמר את הזיהוי "זו הקלטה שלי" בתצוגה - אצל כל מי שנכנס עם אותו טוקן, לא רק מקומית -
+  // השיוך נשמר בגיליון המשותף מיד אחרי ההעלאה (ר' saveRecordingAttribution).
   const form = new FormData();
   form.append('token', token);
   form.append('path', extPath(ext));
@@ -1756,7 +1810,9 @@ async function uploadRecording(blob){
       setTimeout(async () => {
         item.remove();
         try{
-          await appendNewRecordings(true);
+          await appendNewRecordings(async (newFiles) => {
+            for(const f of newFiles) await saveRecordingAttribution(f.name);
+          });
         } finally {
           uploadInProgress = false;
         }
