@@ -148,7 +148,8 @@
   .wf-bar.played{background:var(--accent);}
   /* עיגול-מחוון (thumb) שיושב על הגל בנקודת ההשמעה הנוכחית, בדיוק כמו בוואטסאפ.
      הפסים מסודרים RTL (הפס הראשון מימין), אז המחוון זז מימין (התחלה) לשמאל (סוף) לפי "right" ולא "left".
-     ניתן לגרור אותו (pointer-events:auto) כדי לדלג לזמן השמעה אחר - ר' ה-JS שמטפל ב-pointerdown/move/up. */
+     pointer-events:none כדי שלחיצה בכל מקום על הגל (כולל במקום שבו נמצא הכדור) תמיד
+     תיתפס ע"י waveform.onclick ותקפיץ את הכדור לשם ישירות - בלי מנגנון גרירה מורכב. */
   .wf-thumb{
     position:absolute;
     top:50%;
@@ -157,19 +158,8 @@
     background:var(--accent);
     box-shadow:0 1px 2px rgba(0,0,0,.25);
     transform:translate(50%,-50%);
-    pointer-events:auto;
-    cursor:grab;
-    touch-action:none;
+    pointer-events:none;
     transition:right .05s linear;
-  }
-  .wf-thumb.dragging{transition:none;cursor:grabbing;}
-  /* אזור תפיסה שקוף וגדול יותר מסביב לכדור הקטן, כדי שיהיה נוח לגרור גם באצבע */
-  .wf-thumb::before{
-    content:'';
-    position:absolute;
-    top:50%;left:50%;
-    width:26px;height:26px;
-    transform:translate(-50%,-50%);
   }
   .rec-time{font-size:.7rem;color:var(--text-faint);flex-shrink:0;min-width:28px;text-align:left;}
 
@@ -1548,42 +1538,6 @@ function buildRecItem(file, token, ext){
     setPlayedRatio(ratio);
   };
 
-  // גרירת הכדור (thumb) כדי לדלג לזמן השמעה אחר מזה שבו הוא נמצא כרגע - במהלך הגרירה
-  // רק התצוגה (הכדור/המילוי/התווית) מתעדכנת בזמן אמת, וברגע השחרור בפועל קופצים לזמן הזה.
-  let isDraggingThumb = false;
-  function ratioFromClientX(clientX){
-    const rect = waveform.getBoundingClientRect();
-    const raw = 1 - ((clientX - rect.left) / rect.width);
-    return Math.max(0, Math.min(1, raw));
-  }
-  thumb.addEventListener('pointerdown', (e) => {
-    ensureAudio();
-    if(!audio.duration) return;
-    e.preventDefault();
-    e.stopPropagation();
-    isDraggingThumb = true;
-    thumb.classList.add('dragging');
-    thumb.setPointerCapture(e.pointerId);
-  });
-  thumb.addEventListener('pointermove', (e) => {
-    if(!isDraggingThumb) return;
-    const ratio = ratioFromClientX(e.clientX);
-    setPlayedRatio(ratio);
-    timeLabel.textContent = fmtTime(ratio * audio.duration);
-  });
-  function finishThumbDrag(e){
-    if(!isDraggingThumb) return;
-    isDraggingThumb = false;
-    thumb.classList.remove('dragging');
-    const ratio = ratioFromClientX(e.clientX);
-    audio.currentTime = ratio * audio.duration;
-    setPlayedRatio(ratio);
-  }
-  thumb.addEventListener('pointerup', finishThumbDrag);
-  thumb.addEventListener('pointercancel', finishThumbDrag);
-  // מונע מהקליק על הכדור "לדלוף" גם ל-waveform.onclick ולגרום לדילוג כפול
-  thumb.addEventListener('click', (e) => { e.stopPropagation(); });
-
   // מחיקה עכשיו דרך תפריט קליק ימני על הבועה, כמו בוואטסאפ, ולא כפתור קבוע על המסך.
   async function deleteRecording(){
     const ok = confirm('למחוק את ההקלטה "' + (file.name || '') + '"? הפעולה אינה הפיכה.');
@@ -1725,13 +1679,18 @@ async function uploadRecording(blob){
   const guessedExt = (blob.type && blob.type.includes('wav')) ? 'wav'
                     : (blob.type && blob.type.includes('mp3')) ? 'mp3'
                     : 'webm';
+  const fileName = buildUploadFileName(guessedExt);
 
+  // חשוב: עם autoNumbering=true ימות המשיח מתעלם לגמרי משם הקובץ שנשלח ומייצר לו
+  // מספור אוטומטי משלו (וכך אין שום דרך לשמר בו את Phone-...-Date-...). לכן כאן
+  // מבצעים העלאה "רגילה" (autoNumbering=false) עם הנתיב המלא כולל שם הקובץ הרצוי -
+  // כך השם עם המספר שלי נשמר בפועל, וההקלטה תיוחס אליי כשהיא תוצג ברשימה.
   const form = new FormData();
   form.append('token', token);
-  form.append('path', extPath(ext));
+  form.append('path', extPath(ext) + fileName);
   form.append('convertAudio', '1');
-  form.append('autoNumbering', 'true');
-  form.append('file', blob, buildUploadFileName(guessedExt));
+  form.append('autoNumbering', 'false');
+  form.append('file', blob, fileName);
 
   try{
     const res = await fetch(BASE_URL + 'UploadFile', {method:'POST', body: form});
