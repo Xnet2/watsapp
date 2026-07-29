@@ -70,43 +70,44 @@
   #list{
     flex:1;
     overflow-y:auto;
-    padding:18px 16px 10px;
+    padding:10px 12px 10px;
     display:flex;
     flex-direction:column;
-    gap:10px;
+    gap:2px;
   }
   .rec-item{
     background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    padding:12px 14px;
+    border:1px solid transparent;
+    border-bottom:1px solid var(--border);
+    border-radius:0;
+    padding:9px 6px;
     display:flex;
     align-items:center;
     gap:10px;
-    transition:box-shadow .15s, border-color .15s;
+    transition:background .15s;
   }
-  .rec-item:hover{box-shadow:0 2px 10px rgba(0,0,0,.05);}
+  .rec-item:hover{background:#FAFAFB;}
   .rec-item.pending{border-inline-start:3px solid var(--accent);}
   .rec-item.error-item{border-color:#F3C6C6;background:#FFF8F8;}
 
   .play-btn{
-    width:38px;height:38px;flex-shrink:0;border-radius:50%;
+    width:34px;height:34px;flex-shrink:0;border-radius:50%;
     background:var(--accent);border:none;color:#fff;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
     transition:transform .1s, background .15s;
   }
   .play-btn:hover{background:#433CD1;}
   .play-btn:active{transform:scale(.94);}
-  .play-btn svg{width:15px;height:15px;}
+  .play-btn svg{width:13px;height:13px;}
 
   .rec-info{flex:1;min-width:0;}
-  .rec-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:7px;}
-  .rec-name{font-weight:600;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .rec-meta{font-size:.72rem;color:var(--text-faint);flex-shrink:0;white-space:nowrap;}
+  .rec-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:4px;}
+  .rec-name{font-weight:600;font-size:.87rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .rec-meta{font-size:.7rem;color:var(--text-faint);flex-shrink:0;white-space:nowrap;}
 
-  .rec-wave-row{display:flex;align-items:center;gap:10px;}
+  .rec-wave-row{display:flex;align-items:center;gap:8px;}
   .waveform{
-    flex:1;height:28px;display:flex;align-items:center;gap:2px;cursor:pointer;
+    flex:1;height:22px;display:flex;align-items:center;gap:2px;cursor:pointer;
   }
   .wf-bar{
     width:3px;min-width:3px;border-radius:2px;background:#DDE0E6;flex-shrink:0;
@@ -115,12 +116,12 @@
   .rec-time{font-size:.7rem;color:var(--text-faint);flex-shrink:0;min-width:32px;text-align:left;}
 
   .delete-btn{
-    width:32px;height:32px;flex-shrink:0;border-radius:8px;border:none;background:none;
+    width:28px;height:28px;flex-shrink:0;border-radius:8px;border:none;background:none;
     color:var(--text-faint);cursor:pointer;display:flex;align-items:center;justify-content:center;
     transition:background .15s,color .15s;
   }
   .delete-btn:hover{background:#FDEDEC;color:var(--danger);}
-  .delete-btn svg{width:16px;height:16px;}
+  .delete-btn svg{width:15px;height:15px;}
 
   .status-text{font-size:.82rem;color:var(--text-dim);}
   .status-text.error{color:var(--danger);}
@@ -244,11 +245,11 @@
   #cropZoom{width:100%;margin-top:10px;}
 
   .rec-avatar{
-    width:38px;height:38px;border-radius:50%;flex-shrink:0;overflow:hidden;
+    width:34px;height:34px;border-radius:50%;flex-shrink:0;overflow:hidden;
     background:var(--border);color:var(--text-faint);display:flex;align-items:center;justify-content:center;
   }
   .rec-avatar img{width:100%;height:100%;object-fit:cover;}
-  .rec-avatar svg{width:18px;height:18px;}
+  .rec-avatar svg{width:16px;height:16px;}
   .rec-name.contact-matched{color:var(--text);}
   #fileInput{display:none;}
 </style>
@@ -1024,13 +1025,13 @@ function buildRecItem(file, token, ext){
   initialPeaks.forEach(p => {
     const bar = document.createElement('div');
     bar.className = 'wf-bar';
-    bar.style.height = Math.round(p*28) + 'px';
+    bar.style.height = Math.round(p*22) + 'px';
     waveform.appendChild(bar);
     bars.push(bar);
   });
 
   function setPeaks(peaks){
-    peaks.forEach((p,i) => { if(bars[i]) bars[i].style.height = Math.round(p*28) + 'px'; });
+    peaks.forEach((p,i) => { if(bars[i]) bars[i].style.height = Math.round(p*22) + 'px'; });
   }
   function setPlayedRatio(ratio){
     ratio = Math.max(0, Math.min(1, ratio || 0));
