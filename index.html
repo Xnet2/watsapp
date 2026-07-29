@@ -82,42 +82,33 @@
       radial-gradient(circle at 8% 18%, rgba(0,0,0,.02) 0, transparent 45%),
       radial-gradient(circle at 92% 82%, rgba(0,0,0,.02) 0, transparent 45%);
   }
+  /* קופסת סטטוס להעלאה בתהליך/שגיאה - לא הודעה אמיתית, לכן נשארת עצמאית */
   .rec-item{
     background:var(--surface);
     border:none;
     border-radius:var(--radius);
-    padding:10px 12px;
+    padding:10px 14px;
     display:flex;
     align-items:center;
-    gap:10px;
+    gap:8px;
     box-shadow:0 1px 1px rgba(0,0,0,.08);
-    position:relative;
-    transition:background .12s;
   }
-  .rec-item:hover{background:#FAFAF9;}
   .rec-item.pending{box-shadow:0 0 0 2px var(--accent) inset;}
   .rec-item.error-item{background:#FFF5F5;}
-  /* הודעות "שלי" מיושרות לצד השמאלי (הפוך מהכיוון הכללי RTL) ומסומנות בצבע ירקרק, כמו הודעות יוצאות בוואטסאפ */
-  .rec-item.rec-mine{align-self:flex-end;background:var(--mine-bg);}
-  .rec-item.rec-mine:hover{background:var(--mine-bg-hover);}
 
-  .play-btn{
-    width:36px;height:36px;flex-shrink:0;border-radius:50%;
-    background:var(--accent);border:none;color:#fff;cursor:pointer;
-    display:flex;align-items:center;justify-content:center;
-    transition:transform .1s, background .15s;
-  }
-  .play-btn:hover{background:var(--accent-dark);}
-  .play-btn:active{transform:scale(.92);}
-  .play-btn svg{width:14px;height:14px;}
+  /* שורת הודעה: אווטאר בצד + עמודה (שם מעל, בועה מתחת). גודל הבועה קבוע לכל ההודעות. */
+  .rec-row{display:flex;align-items:flex-end;gap:8px;max-width:94%;align-self:flex-start;}
+  /* הודעות "שלי" מיושרות לצד השמאלי (הפוך מהכיוון הכללי RTL), עם הפיכת סדר האווטאר/בועה, ובצבע ירקרק כמו הודעות יוצאות בוואטסאפ */
+  .rec-row.rec-mine{align-self:flex-end;flex-direction:row-reverse;}
 
-  .rec-info{flex:1;min-width:0;}
-  .rec-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:4px;}
-  .rec-name{font-weight:600;font-size:.87rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .rec-meta{font-size:.71rem;color:var(--text-faint);flex-shrink:0;white-space:nowrap;display:flex;align-items:center;gap:6px;}
+  .rec-col{display:flex;flex-direction:column;min-width:0;}
+  .rec-name-row{display:flex;align-items:baseline;gap:6px;margin:0 4px 3px;}
+  .rec-name{font-weight:600;font-size:.79rem;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;}
+  .rec-name.contact-matched{color:var(--accent-dark);}
+  .rec-meta{font-size:.7rem;color:var(--text-faint);flex-shrink:0;white-space:nowrap;display:flex;align-items:center;gap:6px;}
 
   .add-contact-btn{
-    width:19px;height:19px;flex-shrink:0;border-radius:50%;border:none;
+    width:18px;height:18px;flex-shrink:0;border-radius:50%;border:none;
     background:#E9EDEF;color:var(--text-dim);cursor:pointer;
     display:flex;align-items:center;justify-content:center;padding:0;
     transition:background .15s,color .15s;
@@ -125,23 +116,66 @@
   .add-contact-btn:hover{background:var(--accent);color:#fff;}
   .add-contact-btn svg{width:11px;height:11px;}
 
-  .rec-wave-row{display:flex;align-items:center;gap:8px;}
+  /* הבועה עצמה - רוחב קבוע לכל ההודעות, בלי תלות באורך ההקלטה, כדי שלא יהיו בעיות תצוגה */
+  .rec-bubble{
+    width:300px;
+    max-width:100%;
+    background:var(--surface);
+    border:none;
+    border-radius:var(--radius);
+    padding:10px 12px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    box-shadow:0 1px 1px rgba(0,0,0,.08);
+    transition:background .12s;
+  }
+  .rec-bubble:hover{background:#FAFAF9;}
+  .rec-row.rec-mine .rec-bubble{background:var(--mine-bg);}
+  .rec-row.rec-mine .rec-bubble:hover{background:var(--mine-bg-hover);}
+
+  .play-btn{
+    width:34px;height:34px;flex-shrink:0;border-radius:50%;
+    background:var(--accent);border:none;color:#fff;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:transform .1s, background .15s;
+  }
+  .play-btn:hover{background:var(--accent-dark);}
+  .play-btn:active{transform:scale(.92);}
+  .play-btn svg{width:13px;height:13px;}
+
+  .rec-wave-row{flex:1;min-width:0;display:flex;align-items:center;gap:6px;}
   .waveform{
-    flex:1;height:22px;display:flex;align-items:center;gap:2.5px;cursor:pointer;
+    flex:1;height:22px;display:flex;align-items:center;gap:2px;cursor:pointer;
   }
   .wf-bar{
-    width:2.5px;min-width:2.5px;border-radius:3px;background:#D1D7DB;flex-shrink:0;
+    width:2px;min-width:2px;border-radius:2px;background:#D1D7DB;flex-shrink:0;
   }
   .wf-bar.played{background:var(--accent);}
-  .rec-time{font-size:.7rem;color:var(--text-faint);flex-shrink:0;min-width:32px;text-align:left;}
+  .rec-time{font-size:.68rem;color:var(--text-faint);flex-shrink:0;min-width:30px;text-align:left;}
 
-  .delete-btn{
-    width:28px;height:28px;flex-shrink:0;border-radius:50%;border:none;background:none;
-    color:var(--text-faint);cursor:pointer;display:flex;align-items:center;justify-content:center;
-    transition:background .15s,color .15s;
+  .rec-avatar{
+    width:34px;height:34px;border-radius:50%;flex-shrink:0;overflow:hidden;margin-bottom:2px;
+    background:var(--border);color:var(--text-faint);display:flex;align-items:center;justify-content:center;
   }
-  .delete-btn:hover{background:#FDEDEC;color:var(--danger);}
-  .delete-btn svg{width:14px;height:14px;}
+  .rec-avatar img{width:100%;height:100%;object-fit:cover;}
+  .rec-avatar svg{width:15px;height:15px;}
+
+  /* תפריט קליק ימני למחיקת הקלטה - במקום כפתור מחיקה קבוע על המסך */
+  .ctx-menu{
+    position:fixed;z-index:80;display:none;
+    background:#fff;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);
+    padding:6px;min-width:180px;
+  }
+  .ctx-menu.open{display:block;}
+  .ctx-item{
+    width:100%;display:flex;align-items:center;gap:8px;
+    padding:10px 12px;border:none;background:none;border-radius:7px;
+    font-family:inherit;font-size:.85rem;cursor:pointer;text-align:right;color:var(--text);
+  }
+  .ctx-item:hover{background:var(--bg);}
+  .ctx-item.danger{color:var(--danger);}
+  .ctx-item svg{width:15px;height:15px;flex-shrink:0;}
 
   .status-text{font-size:.82rem;color:var(--text-dim);}
   .status-text.error{color:var(--danger);}
@@ -264,13 +298,6 @@
   #cropImg{position:absolute;top:0;left:0;user-select:none;pointer-events:none;}
   #cropZoom{width:100%;margin-top:10px;}
 
-  .rec-avatar{
-    width:40px;height:40px;border-radius:50%;flex-shrink:0;overflow:hidden;
-    background:var(--border);color:var(--text-faint);display:flex;align-items:center;justify-content:center;
-  }
-  .rec-avatar img{width:100%;height:100%;object-fit:cover;}
-  .rec-avatar svg{width:17px;height:17px;}
-  .rec-name.contact-matched{color:var(--text);}
   .me-toggle-row{
     display:flex;align-items:center;gap:8px;margin-top:14px;cursor:pointer;
     font-size:.82rem;color:var(--text-dim);font-weight:500;
@@ -410,7 +437,46 @@
   </div>
 </div>
 
+<div class="ctx-menu" id="ctxMenu">
+  <button type="button" class="ctx-item danger" id="ctxDeleteBtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+    מחיקת הקלטה
+  </button>
+</div>
+
 <script>
+const ctxMenu = document.getElementById('ctxMenu');
+const ctxDeleteBtn = document.getElementById('ctxDeleteBtn');
+let ctxDeleteHandler = null;
+
+function openCtxMenu(x, y, onDelete){
+  ctxDeleteHandler = onDelete;
+  ctxMenu.classList.add('open');
+  ctxMenu.style.left = '0px';
+  ctxMenu.style.top = '0px';
+  const rect = ctxMenu.getBoundingClientRect();
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let left = Math.min(x, vw - rect.width - 8);
+  let top = Math.min(y, vh - rect.height - 8);
+  ctxMenu.style.left = Math.max(8, left) + 'px';
+  ctxMenu.style.top = Math.max(8, top) + 'px';
+}
+function closeCtxMenu(){
+  ctxMenu.classList.remove('open');
+  ctxDeleteHandler = null;
+}
+ctxDeleteBtn.onclick = () => {
+  const fn = ctxDeleteHandler;
+  closeCtxMenu();
+  if(fn) fn();
+};
+document.addEventListener('click', (e) => {
+  if(ctxMenu.classList.contains('open') && !ctxMenu.contains(e.target)) closeCtxMenu();
+});
+document.addEventListener('scroll', closeCtxMenu, true);
+window.addEventListener('resize', closeCtxMenu);
+document.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeCtxMenu(); });
+
 const BASE_URL = 'https://www.call2all.co.il/ym/api/';
 const LS_TOKEN = 'yemot_token';
 const LS_EXT = 'yemot_ext';
@@ -866,17 +932,24 @@ function playChime(){
   try{
     if(!sharedAudioCtx) sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const ctx = sharedAudioCtx;
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.type = 'sine';
-    o.frequency.setValueAtTime(920, ctx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(1300, ctx.currentTime + 0.09);
-    g.gain.setValueAtTime(0.001, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + 0.015);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.16);
-    o.connect(g); g.connect(ctx.destination);
-    o.start();
-    o.stop(ctx.currentTime + 0.18);
+    const now = ctx.currentTime;
+    // שני צלילים קצרים ורכים בהפרש של טרצה, בלי עלייה חדה בתדר - נשמע כמו "טוק-טוק" עדין
+    const notes = [
+      {freq:740, start:0,     dur:0.11},
+      {freq:988, start:0.085, dur:0.15}
+    ];
+    notes.forEach(n => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(n.freq, now + n.start);
+      g.gain.setValueAtTime(0.0001, now + n.start);
+      g.gain.exponentialRampToValueAtTime(0.085, now + n.start + 0.018);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + n.start + n.dur);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(now + n.start);
+      o.stop(now + n.start + n.dur + 0.02);
+    });
   }catch(err){ /* אם הדפדפן חוסם אודיו ללא אינטראקציה - פשוט מדלגים על הצליל */ }
 }
 
@@ -1036,14 +1109,6 @@ async function computeWaveform(url){
   }catch(err){
     return null;
   }
-}
-
-// רוחב "בועת" ההודעה משתנה לפי אורך ההקלטה בפועל (כמו בוואטסאפ) - הקלטה קצרה = בועה צרה,
-// הקלטה ארוכה = בועה רחבה יותר, עד תקרה כדי לא לתפוס את כל הרוחב.
-function bubbleWidthFor(durationSec){
-  if(!durationSec || isNaN(durationSec)) return 'min(400px, 94%)';
-  const px = 360 + Math.min(durationSec, 45) * 4;
-  return 'min(' + Math.round(px) + 'px, 94%)';
 }
 
 const waveformObserver = new IntersectionObserver((entries) => {
