@@ -379,6 +379,38 @@
   .ov-box .btnrow button.secondary:hover{background:var(--border);}
   .ov-box .btnrow button.danger-text{color:var(--danger);}
 
+  .settings-systems-title{font-size:.8rem;font-weight:600;color:var(--text-dim);margin-bottom:8px;}
+  #settingsSystemsList{
+    display:flex;flex-direction:column;gap:6px;
+    max-height:220px;overflow-y:auto;
+    margin-bottom:18px;padding-bottom:2px;
+    border-bottom:1px solid var(--border);
+  }
+  .settings-sys-row{
+    display:flex;align-items:center;gap:10px;
+    padding:8px 10px;border-radius:8px;
+    background:var(--bg);cursor:pointer;
+    transition:background .15s;
+  }
+  .settings-sys-row:hover{background:#E4F7F1;}
+  .settings-sys-row.active{background:#D9FDD3;}
+  .settings-sys-row .settings-sys-avatar{
+    width:34px;height:34px;border-radius:50%;flex-shrink:0;
+    background:var(--accent);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .settings-sys-row .settings-sys-avatar svg{width:17px;height:17px;}
+  .settings-sys-row .settings-sys-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
+  .settings-sys-row .settings-sys-info b{font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;}
+  .settings-sys-row .settings-sys-info span{font-size:.72rem;color:var(--text-faint);}
+  .settings-sys-row .settings-sys-del{
+    flex-shrink:0;width:28px;height:28px;border-radius:50%;
+    border:none;background:transparent;color:var(--text-faint);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  .settings-sys-row .settings-sys-del:hover{background:rgba(220,38,38,.1);color:var(--danger);}
+  .settings-sys-row .settings-sys-del svg{width:15px;height:15px;}
+
   .wizard-entry-btn{
     display:flex;align-items:center;gap:10px;width:100%;
     background:#F0FBF8;border:1px solid #BFE9DE;border-radius:10px;
@@ -487,9 +519,9 @@
             <path d="M16.4 14.6c-.25-.55-.5-.56-.73-.57l-.62-.01c-.22 0-.57.08-.87.4-.3.32-1.13 1.1-1.13 2.7s1.16 3.13 1.32 3.35c.16.22 2.24 3.58 5.53 4.88 2.73 1.08 3.29.86 3.88.81.6-.06 1.9-.78 2.17-1.53.27-.75.27-1.4.19-1.53-.08-.14-.3-.22-.62-.38-.32-.16-1.9-.94-2.2-1.04-.3-.11-.51-.16-.73.16-.22.32-.84 1.04-1.03 1.25-.19.22-.38.24-.7.08-.32-.16-1.36-.5-2.6-1.6-.96-.86-1.6-1.91-1.79-2.23-.19-.32-.02-.49.14-.65.14-.14.32-.38.48-.57.16-.19.22-.32.32-.54.11-.22.06-.4-.03-.57-.08-.16-.7-1.76-.99-2.4z" fill="#fff"/>
           </svg>
         </span>
-        <b>וואטסאפ פון</b>
+        <b id="headerTitle">וואטסאפ פון</b>
       </div>
-      <span id="extLabel">שלוחה —</span>
+      <span id="extLabel"></span>
     </div>
     <div class="actions">
       <button class="icon" id="homeAddBtn" title="הוספת מערכת" aria-label="הוספת מערכת" style="display:none;">
@@ -530,7 +562,13 @@
 
 <div id="settingsOverlay" class="ov">
   <div class="ov-box">
-    <h2>חיבור למערכת ימות המשיח</h2>
+    <h2 id="settingsTitle">חיבור למערכת ימות המשיח</h2>
+
+    <div id="settingsSystemsSection" style="display:none;">
+      <div class="settings-systems-title">המערכות שלי</div>
+      <div id="settingsSystemsList"></div>
+    </div>
+
     <button type="button" class="wizard-entry-btn" id="openWizardBtn">
       <span class="wizard-entry-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -852,7 +890,11 @@ const BAR_COUNT = 30;
 
 const listEl = document.getElementById('list');
 const extLabel = document.getElementById('extLabel');
+const headerTitle = document.getElementById('headerTitle');
 const settingsOverlay = document.getElementById('settingsOverlay');
+const settingsTitle = document.getElementById('settingsTitle');
+const settingsSystemsSection = document.getElementById('settingsSystemsSection');
+const settingsSystemsList = document.getElementById('settingsSystemsList');
 const labelInput = document.getElementById('labelInput');
 const tokenInput = document.getElementById('tokenInput');
 const extInput = document.getElementById('extInput');
@@ -877,13 +919,50 @@ function getExt(){ const s = getActiveSystem(); return (s && s.ext) || '1'; }
 function getTzintukList(){ const s = getActiveSystem(); return (s && s.tzintukList) || ''; }
 function getTzintukCallerId(){ const s = getActiveSystem(); return (s && s.tzintukCallerId) || ''; }
 
+// בונה שורת מערכת קומפקטית לרשימת "המערכות שלי" במסך ההגדרות - לחיצה על השורה טוענת
+// את אותה מערכת לשדות העריכה, וכפתור המחיקה הקטן מסיר אותה בלי לצאת מההגדרות.
+function buildSettingsSystemRow(sys, activeId){
+  const row = document.createElement('div');
+  row.className = 'settings-sys-row' + (sys.id === activeId ? ' active' : '');
+  row.innerHTML =
+    '<span class="settings-sys-avatar">' + ICON_PERSON + '</span>' +
+    '<span class="settings-sys-info"><b></b><span></span></span>' +
+    '<button type="button" class="settings-sys-del" title="מחיקת מערכת זו" aria-label="מחיקת מערכת זו">' +
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
+    '</button>';
+  row.querySelector('b').textContent = systemLabel(sys);
+  row.querySelector('.settings-sys-info span').textContent = 'שלוחה ' + (sys.ext || '1');
+  row.onclick = () => { setActiveSystemId(sys.id); openSettings(); };
+  row.querySelector('.settings-sys-del').onclick = (e) => {
+    e.stopPropagation();
+    const ok = confirm('להסיר את המערכת "' + systemLabel(sys) + '" מהאתר הזה? ' +
+      'פרטי החיבור יימחקו מהמכשיר הזה בלבד - שום דבר לא יימחק בימות המשיח עצמו.');
+    if(!ok) return;
+    const remaining = getSystems().filter(s => s.id !== sys.id);
+    saveSystems(remaining);
+    if(activeId === sys.id) setActiveSystemId(null);
+    openSettings();
+  };
+  return row;
+}
+function renderSettingsSystemsList(){
+  const systems = getSystems();
+  settingsSystemsSection.style.display = systems.length > 0 ? 'block' : 'none';
+  settingsSystemsList.innerHTML = '';
+  const activeId = getActiveSystemId();
+  systems.forEach(sys => settingsSystemsList.appendChild(buildSettingsSystemRow(sys, activeId)));
+}
+
 function openSettings(){
-  labelInput.value = (getActiveSystem() && getActiveSystem().label) || '';
+  const sys = getActiveSystem();
+  labelInput.value = (sys && sys.label) || '';
   tokenInput.value = getToken();
   extInput.value = getExt();
   tzintukListInput.value = getTzintukList();
   contactsApiInput.value = getContactsApiUrl();
-  deleteSystemBtn.style.display = getActiveSystem() ? 'inline-block' : 'none';
+  deleteSystemBtn.style.display = sys ? 'inline-block' : 'none';
+  settingsTitle.textContent = sys ? 'עריכת מערכת' : 'חיבור מערכת חדשה';
+  renderSettingsSystemsList();
   settingsOverlay.classList.add('open');
 }
 function closeSettings(){ settingsOverlay.classList.remove('open'); }
@@ -907,12 +986,12 @@ document.getElementById('saveSettingsBtn').onclick = () => {
   fetchContactsFromServer().then(loadRecordings);
 };
 
-// "הוספת מערכת נוספת" מתוך ההגדרות - פותח את המדריך כאילו אין מערכת פעילה, כדי שהוא יתחיל
-// עם שדות ריקים וייצור בסיום מערכת חדשה (ר' upsertActiveSystem) במקום לשכתב את הנוכחית.
+// "הוספת מערכת נוספת" מתוך ההגדרות - פותח שוב את מסך ההגדרות המקוצר כאילו אין מערכת פעילה,
+// כדי שהוא יתחיל עם שדות ריקים וייצור בסיום מערכת חדשה (ר' upsertActiveSystem) במקום לשכתב
+// את הנוכחית. המדריך למתחיל עדיין נגיש דרך הכפתור הייעודי, אבל לא נפתח כברירת מחדל.
 document.getElementById('addAnotherSystemBtn').onclick = () => {
-  closeSettings();
   setActiveSystemId(null);
-  openWizard();
+  openSettings();
 };
 
 const deleteSystemBtn = document.getElementById('deleteSystemBtn');
@@ -926,7 +1005,7 @@ deleteSystemBtn.onclick = () => {
   saveSystems(remaining);
   setActiveSystemId(null);
   closeSettings();
-  if(remaining.length === 0){ openWizard(); }
+  if(remaining.length === 0){ openSettings(); }
   else if(remaining.length === 1){ enterSystem(remaining[0].id); }
   else { showHome(); }
 };
@@ -1046,7 +1125,14 @@ function updateHeaderForMode(){
   homeAddBtn.style.display = inHomeMode ? 'flex' : 'none';
   backHomeBtn.style.display = (!inHomeMode && systems.length > 1) ? 'flex' : 'none';
   if(inHomeMode){
+    headerTitle.textContent = 'וואטסאפ פון';
+    extLabel.style.display = '';
     extLabel.textContent = systems.length + (systems.length === 1 ? ' מערכת מחוברת' : ' מערכות מחוברות');
+  } else {
+    // בתוך שיחה מציגים את שם הקבוצה/המערכת עצמה במקום שם האפליקציה, ומסתירים את שורת
+    // "שלוחה X" - שם המערכת כבר מספיק כדי לזהות באיזו שיחה נמצאים.
+    headerTitle.textContent = systemLabel(getActiveSystem());
+    extLabel.style.display = 'none';
   }
 }
 
@@ -1069,7 +1155,7 @@ function enterSystem(id){
   fetchContactsFromServer().then(loadRecordings);
 }
 backHomeBtn.onclick = showHome;
-homeAddBtn.onclick = () => { setActiveSystemId(null); openWizard(); };
+homeAddBtn.onclick = () => { setActiveSystemId(null); openSettings(); };
 
 // בונה שורת מערכת ברשימה (שלד ראשוני שמוצג מיד, לפני שהתצוגה המקדימה נטענת ברקע).
 function buildSystemRow(sys){
@@ -1162,7 +1248,7 @@ function renderHome(){
   const systems = getSystems();
   homeListEl.innerHTML = '';
   if(systems.length === 0){
-    openWizard();
+    openSettings();
     return;
   }
   systems.forEach(sys => {
@@ -1759,7 +1845,7 @@ async function fetchFileList(token, ext){
 async function loadRecordings(){
   const token = getToken();
   const ext = getExt();
-  extLabel.textContent = 'שלוחה ' + ext;
+  headerTitle.textContent = systemLabel(getActiveSystem());
 
   if(!token){
     setStatus('לחצו על הגדרות למעלה כדי להזין טוקן ומספר שלוחה.');
@@ -2578,7 +2664,7 @@ async function uploadRecording(blob){
 migrateLegacySystemIfNeeded();
 const bootSystems = getSystems();
 if(bootSystems.length === 0){
-  openWizard();
+  openSettings();
 } else if(bootSystems.length === 1){
   enterSystem(bootSystems[0].id);
 } else {
