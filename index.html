@@ -1812,7 +1812,13 @@ function buildRecItem(file, token, ext){
     const result = await computeWaveform(src);
     if(result){
       setPeaks(result.peaks);
-      if(result.duration) durVal.textContent = fmtTime(result.duration);
+      if(result.duration){
+        durVal.textContent = fmtTime(result.duration);
+        // מציגים את משך ההודעה בספירה לאחור כבר עכשיו (לפני שהופעלה בכלל ניגון),
+        // אבל רק אם הניגון בפועל עוד לא נוצר/החל - אחרת לא לדרוס תצוגה שכבר מבוססת
+        // על audio.duration/audio.currentTime האמיתיים.
+        if(!audio) timeLabel.textContent = fmtRemaining(0, result.duration);
+      }
     }
   };
   waveformObserver.observe(row);
@@ -1902,6 +1908,10 @@ function buildRecItem(file, token, ext){
   // הערה: בחלק מהדפדפנים/ה-WebView (כמו כשהאתר עטוף כאפליקציה), שינוי currentTime תוך כדי
   // שההקלטה מתנגנת בפועל לא נתפס - צריך לעצור לרגע, לקבוע את הזמן החדש, ואז להמשיך לנגן,
   // אחרת הריצה קדימה/אחורה פשוט לא קורית תוך כדי השמעה (אבל עובדת לפני/אחרי).
+  // מונה שמתקדם בכל קליק על הגל, כדי שאם המשתמש לוחץ כמה פעמים ברצף (למשל גורר את הדעת
+  // בין נקודות שונות) - רק ה-seek האחרון יפעיל בפועל את audio.play() כשה-'seeked' שלו יגיע,
+  // ולא כל ה-listeners הישנים שעוד ממתינים לאירוע שכבר לא רלוונטי.
+  let seekToken = 0;
   waveform.onclick = (e) => {
     ensureAudio();
     const rect = waveform.getBoundingClientRect();
@@ -1909,13 +1919,30 @@ function buildRecItem(file, token, ext){
     const ratio = Math.max(0, Math.min(1, 1 - ((e.clientX - rect.left) / rect.width)));
     if(audio.duration && isFinite(audio.duration)){
       const wasPlaying = !audio.paused;
+      const myToken = ++seekToken;
       if(wasPlaying) audio.pause();
-      audio.currentTime = ratio * audio.duration;
+      const target = ratio * audio.duration;
       setPlayedRatio(ratio);
-      timeLabel.textContent = fmtRemaining(audio.currentTime, audio.duration);
-      if(wasPlaying) audio.play();
-      if(wasPlaying && waveRafId === null) waveRafId = requestAnimationFrame(stepWaveform);
+      timeLabel.textContent = fmtRemaining(target, audio.duration);
       pendingSeekRatio = null;
+      // חשוב: לא קוראים ל-audio.play() מיד אחרי שינוי currentTime. שינוי currentTime הוא
+      // פעולה א-סינכרונית (יש שלב seeking שנגמר רק כשמגיע אירוע 'seeked') - ובחלק
+      // מהדפדפנים/ה-WebView, אם קוראים ל-play() לפני שה-seek בפועל הסתיים, הניגון פשוט
+      // ממשיך מהמיקום הישן (או קופץ בחזרה להתחלה) במקום מהמיקום החדש. לכן ממתינים בפועל
+      // לאירוע 'seeked' (או 'timeupdate' כגיבוי, למקרה שהדפדפן לא יורה 'seeked' כשמצפים)
+      // ורק אז מפעילים מחדש את הניגון.
+      if(wasPlaying){
+        const resumePlayback = () => {
+          audio.removeEventListener('seeked', resumePlayback);
+          audio.removeEventListener('timeupdate', resumePlayback);
+          if(myToken !== seekToken) return; // בינתיים בוצע seek נוסף - מתעלמים מהישן
+          audio.play();
+          if(waveRafId === null) waveRafId = requestAnimationFrame(stepWaveform);
+        };
+        audio.addEventListener('seeked', resumePlayback);
+        audio.addEventListener('timeupdate', resumePlayback);
+      }
+      audio.currentTime = target;
     } else {
       pendingSeekRatio = ratio;
       setPlayedRatio(ratio);
