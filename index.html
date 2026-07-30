@@ -382,6 +382,19 @@
   .wizard-summary b{color:var(--text);}
   .wizard-exit{display:block;margin:14px auto 0;}
 
+  .preview-player{display:flex;align-items:center;gap:12px;margin-top:6px;}
+  .preview-player .play-btn{flex-shrink:0;}
+  .preview-wave-row{flex:1;min-width:0;display:flex;align-items:center;gap:8px;}
+  .preview-progress{
+    flex:1;height:6px;border-radius:3px;background:var(--border);cursor:pointer;position:relative;
+  }
+  .preview-progress-fill{
+    position:absolute;top:0;right:0;height:100%;width:0%;border-radius:3px;background:var(--accent);
+  }
+  #previewTimeLabel{min-width:32px;}
+  .preview-btnrow{gap:8px;}
+  .preview-btnrow button{padding:10px 4px;font-size:.82rem;}
+
   #contactsList{display:flex;flex-direction:column;gap:6px;margin-top:6px;max-height:50vh;overflow-y:auto;}
   .contact-row{
     display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;cursor:pointer;
@@ -488,30 +501,17 @@
         <span>לא בטוחים מה למלא? נעבור יחד שלב אחר שלב</span>
       </span>
     </button>
-    <div class="sub">פרטי החיבור נשמרים רק בדפדפן שלכם (localStorage). אנשי הקשר נשמרים בגיליון Google Sheets פרטי - שלכם בלבד - לפי הכתובת שתגדירו למטה.</div>
-
-    <label for="tokenInput">טוקן (מספר מערכת:סיסמה)</label>
+    <label for="tokenInput">מספר מערכת וסיסמה (בפורמט מספר:סיסמה)</label>
     <input type="text" id="tokenInput" placeholder="0771234567:1234" dir="ltr">
 
     <label for="extInput">מספר שלוחה</label>
     <input type="text" id="extInput" placeholder="1" dir="ltr" value="1">
-    <div class="hint">הנתיב שממנו יישלפו ההקלטות: ivr2:/&lt;שלוחה&gt;/. קבצים שאינם בפורמט של הקלטה אמיתית (כמו קבצי מערכת/תפריט בשמות שאינם המספר הרץ הרגיל) מסוננים אוטומטית ולא מוצגים. מספר שולח מזוהה אוטומטית כאשר שם הקובץ בפורמט Phone-...-Date-... (תלוי בהגדרות השלוחה), ובנוסף מנסים לזהות אותו משדה נוסף בתשובת השרת אם קיים כזה.</div>
 
-    <label for="tzintukListInput">שליחת צינתוק לרשימה בהקלטה חדשה (אופציונלי)</label>
-    <input type="text" id="tzintukListInput" placeholder="מספר/שם הרשימה, השאירו ריק לביטול" dir="ltr">
-    <div class="hint">יש להזין את מספר רשימת הצינתוקים כפי שמוגדר בימות המשיח תחת "ניהול רשימות צינתוקים במודול צינתוקים חינמיים" (לדוגמה: 1, או השם שהוגדר לרשימה). בכל הקלטה חדשה - הן כזו שמתקבלת דרך אתר זה והן כזו שמתקבלת ישירות מהשלוחה בטלפון - תישלח שיחת צינתוק לכל המספרים הרשומים באותה רשימה, דרך פקודת RunTzintuk (עם הפרמטר phones=tzl:&lt;מספר הרשימה&gt;). כדאי לוודא מול התיעוד העדכני של ימות המשיח שהפרמטרים תואמים לחשבון שלכם, ולעקוב אחר קונסולת הדפדפן (F12) אם השליחה לא מצליחה.</div>
+    <label for="tzintukListInput">שם רשימת צינתוקים</label>
+    <input type="text" id="tzintukListInput" placeholder="אופציונלי" dir="ltr">
 
-    <label for="tzintukCallerIdInput">זיהוי מתקשר לצינתוק (אופציונלי)</label>
-    <input type="text" id="tzintukCallerIdInput" placeholder="השאירו ריק לזיהוי ברירת מחדל" dir="ltr">
-
-    <label for="contactsApiInput">כתובת API לאנשי קשר (SheetDB)</label>
+    <label for="contactsApiInput">כתובת API לאנשי קשר</label>
     <input type="text" id="contactsApiInput" placeholder="https://sheetdb.io/api/v1/xxxxxxxxxx" dir="ltr">
-    <div class="hint">אנשי הקשר ושיוך ההקלטות שלכם נשמרים בגיליון Google Sheets פרטי, דרך שירות SheetDB. צרו גיליון וחיבור SheetDB משלכם (sheetdb.io) עם העמודות SystemKey, ContactId, Name, Phone, PhotoUrl, UpdatedAt, והדביקו כאן את כתובת ה-API שתקבלו משם. כך כל מי שמפרסם את האתר הזה משתמש בגיליון הפרטי שלו, ואף אחד לא רואה את אנשי הקשר של מישהו אחר. בלי כתובת כאן, אנשי הקשר לא ייטענו וההקלטות יוצגו רק לפי המספר הגולמי.</div>
-
-    <div class="warn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      <span>ה-API של ימות המשיח לא תמיד תומך בקריאות ישירות מהדפדפן (CORS). אם טעינה, מחיקה, העלאה או ציור גלי הקול נכשלים, ייתכן שיידרש שרת ביניים (proxy). ניתן להזין כאן סיסמת ניהול או סיסמה ייעודית.</span>
-    </div>
 
     <div class="btnrow">
       <button class="secondary" id="closeSettingsBtn">סגירה</button>
@@ -649,6 +649,27 @@
   </div>
 </div>
 
+<div id="recordPreviewOverlay" class="ov">
+  <div class="ov-box">
+    <h2>בדיקה לפני שליחה</h2>
+    <div class="sub">אפשר להאזין להקלטה, למחוק אותה, להקליט מחדש, או לשלוח.</div>
+    <div class="preview-player">
+      <button type="button" class="play-btn" id="previewPlayBtn" aria-label="נגן"></button>
+      <div class="preview-wave-row">
+        <div class="preview-progress" id="previewProgress" tabindex="0">
+          <div class="preview-progress-fill" id="previewProgressFill"></div>
+        </div>
+        <span class="rec-time" id="previewTimeLabel">0:00</span>
+      </div>
+    </div>
+    <div class="btnrow preview-btnrow">
+      <button class="secondary danger-text" id="previewCancelBtn">מחיקה</button>
+      <button class="secondary" id="previewRedoBtn">הקלטה מחדש</button>
+      <button class="primary" id="previewSendBtn">שליחה</button>
+    </div>
+  </div>
+</div>
+
 <div class="ctx-menu" id="ctxMenu">
   <button type="button" class="ctx-item danger" id="ctxDeleteBtn">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -725,7 +746,6 @@ const settingsOverlay = document.getElementById('settingsOverlay');
 const tokenInput = document.getElementById('tokenInput');
 const extInput = document.getElementById('extInput');
 const tzintukListInput = document.getElementById('tzintukListInput');
-const tzintukCallerIdInput = document.getElementById('tzintukCallerIdInput');
 const contactsApiInput = document.getElementById('contactsApiInput');
 
 let activeAudio = null;
@@ -750,7 +770,6 @@ function openSettings(){
   tokenInput.value = getToken();
   extInput.value = getExt();
   tzintukListInput.value = getTzintukList();
-  tzintukCallerIdInput.value = getTzintukCallerId();
   contactsApiInput.value = getContactsApiUrl();
   settingsOverlay.classList.add('open');
 }
@@ -767,7 +786,6 @@ document.getElementById('saveSettingsBtn').onclick = () => {
   localStorage.setItem(LS_TOKEN, t);
   localStorage.setItem(LS_EXT, e);
   localStorage.setItem(LS_TZINTUK_LIST, tzintukListInput.value.trim());
-  localStorage.setItem(LS_TZINTUK_CALLERID, tzintukCallerIdInput.value.trim());
   localStorage.setItem(LS_CONTACTS_API, contactsApiInput.value.trim());
   closeSettings();
   fetchContactsFromServer().then(loadRecordings);
@@ -1405,6 +1423,12 @@ function fmtTime(sec){
   const s = Math.floor(sec%60);
   return m + ':' + String(s).padStart(2,'0');
 }
+// בשונה מ-fmtTime, זה מציג את הזמן שנותר עד סוף ההקלטה (duration - currentTime) ולא את
+// הזמן שכבר עבר - כדי שהשעון ליד הגל יספור למטה (כמו בהודעות קוליות בוואטסאפ) במקום למעלה.
+function fmtRemaining(currentTime, duration){
+  if(!isFinite(duration) || duration < 0) return '0:00';
+  return fmtTime(Math.max(0, duration - (currentTime || 0)));
+}
 
 // בודק אם שם קובץ נראה כמו הודעה קולית אמיתית ולא קובץ מערכת/תפריט (כמו M1253 או
 // M382776447 שלפעמים מופיעים בתיקייה, לא במסגרת הסדר הרץ הרגיל של שמות ההקלטות).
@@ -1815,22 +1839,23 @@ function buildRecItem(file, token, ext){
     // "נגן" קודם - כך אפשר לגלול/להריץ קדימה בגל גם לפני שההקלטה הופעלה ולו פעם אחת.
     audio.preload = 'metadata';
     audio.addEventListener('loadedmetadata', () => {
-      if(audio.paused) timeLabel.textContent = fmtTime(audio.duration);
+      if(audio.paused) timeLabel.textContent = fmtRemaining(audio.currentTime, audio.duration);
       if(audio.duration) durVal.textContent = fmtTime(audio.duration);
       // אם המשתמש כבר לחץ על הגל לפני שה-metadata נטענה - מבצעים עכשיו את הקפיצה שהמתינה.
       if(pendingSeekRatio !== null && audio.duration){
         audio.currentTime = pendingSeekRatio * audio.duration;
         setPlayedRatio(pendingSeekRatio);
+        timeLabel.textContent = fmtRemaining(audio.currentTime, audio.duration);
         pendingSeekRatio = null;
       }
     });
     audio.addEventListener('timeupdate', () => {
-      timeLabel.textContent = fmtTime(audio.currentTime);
+      timeLabel.textContent = fmtRemaining(audio.currentTime, audio.duration);
     });
     audio.addEventListener('ended', () => {
       playBtn.innerHTML = ICON_PLAY;
       setPlayedRatio(0);
-      timeLabel.textContent = fmtTime(audio.duration);
+      timeLabel.textContent = fmtRemaining(0, audio.duration);
       if(activeAudio === audio){ activeAudio = null; activePlayBtn = null; activeSetPlayed = null; }
 
       // מעבר אוטומטי להקלטה הבאה ברשימה, עם צליל קטן קודם - כמו בוואטסאפ.
@@ -1870,14 +1895,22 @@ function buildRecItem(file, token, ext){
   // או אחרי השהיה. אם ה-duration עדיין לא ידוע (metadata לא נטענה עדיין), שומרים את היחס
   // המבוקש ומחילים אותו ברגע שהיא תיטען (ר' pendingSeekRatio ב-ensureAudio), ובינתיים כבר
   // מזיזים את התצוגה (הכדור/מילוי הגל) כדי שהלחיצה תרגיש מיידית.
+  // הערה: בחלק מהדפדפנים/ה-WebView (כמו כשהאתר עטוף כאפליקציה), שינוי currentTime תוך כדי
+  // שההקלטה מתנגנת בפועל לא נתפס - צריך לעצור לרגע, לקבוע את הזמן החדש, ואז להמשיך לנגן,
+  // אחרת הריצה קדימה/אחורה פשוט לא קורית תוך כדי השמעה (אבל עובדת לפני/אחרי).
   waveform.onclick = (e) => {
     ensureAudio();
     const rect = waveform.getBoundingClientRect();
     // הפסים בסדר RTL (התחלה מימין), אז יחס ההשמעה נמדד מהקצה הימני ולא מהשמאלי
     const ratio = Math.max(0, Math.min(1, 1 - ((e.clientX - rect.left) / rect.width)));
     if(audio.duration && isFinite(audio.duration)){
+      const wasPlaying = !audio.paused;
+      if(wasPlaying) audio.pause();
       audio.currentTime = ratio * audio.duration;
       setPlayedRatio(ratio);
+      timeLabel.textContent = fmtRemaining(audio.currentTime, audio.duration);
+      if(wasPlaying) audio.play();
+      if(wasPlaying && waveRafId === null) waveRafId = requestAnimationFrame(stepWaveform);
       pendingSeekRatio = null;
     } else {
       pendingSeekRatio = ratio;
@@ -1955,7 +1988,7 @@ async function startRecording(){
     mediaRecorder.onstop = () => {
       stream.getTracks().forEach(t => t.stop());
       const blob = new Blob(recordedChunks, {type: mediaRecorder.mimeType || 'audio/webm'});
-      uploadRecording(blob);
+      showRecordPreview(blob, 'mic');
     };
     mediaRecorder.start();
     isRecording = true;
@@ -1990,9 +2023,101 @@ function stopRecording(){
 uploadBtn.onclick = () => fileInput.click();
 fileInput.onchange = () => {
   if(fileInput.files && fileInput.files[0]){
-    uploadRecording(fileInput.files[0]);
+    showRecordPreview(fileInput.files[0], 'file');
     fileInput.value = '';
   }
+};
+
+// ===== בדיקה לפני שליחה - נגן קטן לניגון ההקלטה/הקובץ שנבחר, עם אפשרות למחיקה,
+// הקלטה מחדש (או בחירת קובץ אחר), או שליחה בפועל. שום דבר לא מועלה לשרת עד לחיצה על "שליחה". =====
+const recordPreviewOverlay = document.getElementById('recordPreviewOverlay');
+const previewPlayBtn = document.getElementById('previewPlayBtn');
+const previewProgress = document.getElementById('previewProgress');
+const previewProgressFill = document.getElementById('previewProgressFill');
+const previewTimeLabel = document.getElementById('previewTimeLabel');
+const previewCancelBtn = document.getElementById('previewCancelBtn');
+const previewRedoBtn = document.getElementById('previewRedoBtn');
+const previewSendBtn = document.getElementById('previewSendBtn');
+
+let previewBlob = null;
+let previewKind = null; // 'mic' | 'file'
+let previewAudio = null;
+let previewObjectUrl = null;
+
+function showRecordPreview(blob, kind){
+  previewBlob = blob;
+  previewKind = kind;
+  previewObjectUrl = URL.createObjectURL(blob);
+  previewAudio = new Audio(previewObjectUrl);
+  previewPlayBtn.innerHTML = ICON_PLAY;
+  previewProgressFill.style.width = '0%';
+  previewTimeLabel.textContent = '0:00';
+
+  previewAudio.addEventListener('loadedmetadata', () => {
+    if(previewAudio.paused) previewTimeLabel.textContent = fmtTime(previewAudio.duration);
+  });
+  previewAudio.addEventListener('timeupdate', () => {
+    const ratio = previewAudio.duration ? previewAudio.currentTime/previewAudio.duration : 0;
+    previewProgressFill.style.width = (ratio*100) + '%';
+    previewTimeLabel.textContent = fmtRemaining(previewAudio.currentTime, previewAudio.duration);
+  });
+  previewAudio.addEventListener('ended', () => {
+    previewPlayBtn.innerHTML = ICON_PLAY;
+    previewProgressFill.style.width = '0%';
+    previewTimeLabel.textContent = fmtTime(previewAudio.duration);
+  });
+
+  previewRedoBtn.textContent = kind === 'mic' ? 'הקלטה מחדש' : 'בחירת קובץ אחר';
+  recordPreviewOverlay.classList.add('open');
+}
+
+function closeRecordPreview(){
+  recordPreviewOverlay.classList.remove('open');
+  if(previewAudio){ previewAudio.pause(); previewAudio = null; }
+  if(previewObjectUrl){ URL.revokeObjectURL(previewObjectUrl); previewObjectUrl = null; }
+  previewBlob = null;
+  previewKind = null;
+}
+
+previewPlayBtn.onclick = () => {
+  if(!previewAudio) return;
+  if(previewAudio.paused){
+    previewAudio.play();
+    previewPlayBtn.innerHTML = ICON_PAUSE;
+  } else {
+    previewAudio.pause();
+    previewPlayBtn.innerHTML = ICON_PLAY;
+  }
+};
+
+previewProgress.onclick = (e) => {
+  if(!previewAudio || !previewAudio.duration || !isFinite(previewAudio.duration)) return;
+  const rect = previewProgress.getBoundingClientRect();
+  // RTL - נמדד מהקצה הימני, כמו הגל בתוך בועות ההודעה
+  const ratio = Math.max(0, Math.min(1, 1 - ((e.clientX - rect.left) / rect.width)));
+  const wasPlaying = !previewAudio.paused;
+  if(wasPlaying) previewAudio.pause();
+  previewAudio.currentTime = ratio * previewAudio.duration;
+  previewProgressFill.style.width = (ratio*100) + '%';
+  previewTimeLabel.textContent = fmtRemaining(previewAudio.currentTime, previewAudio.duration);
+  if(wasPlaying) previewAudio.play();
+};
+
+previewCancelBtn.onclick = () => {
+  closeRecordPreview();
+};
+
+previewRedoBtn.onclick = () => {
+  const kind = previewKind;
+  closeRecordPreview();
+  if(kind === 'mic') startRecording();
+  else fileInput.click();
+};
+
+previewSendBtn.onclick = () => {
+  const blob = previewBlob;
+  closeRecordPreview();
+  if(blob) uploadRecording(blob);
 };
 
 // בונה שם קובץ זמני בלבד להעלאה. מאז המעבר ל-autoNumbering=true (ר' uploadRecording)
