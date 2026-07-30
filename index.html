@@ -1608,7 +1608,13 @@ async function computeWaveform(url){
       peaks.push(sum/blockSize);
     }
     const max = Math.max(...peaks, 0.0001);
-    return { peaks: peaks.map(p => Math.max(0.12, p/max)), duration: audioBuf.duration };
+    // הקובץ המלא כבר בידיים (buf) בשלב הזה - יוצרים ממנו Blob URL מקומי כדי שהניגון בפועל
+    // (ר' ensureAudio) יוכל להשתמש בו במקום לשלוף בשידור (streaming) ישירות מהשרת. ככה ריצה
+    // קדימה/אחורה תוך כדי השמעה נשארת תמיד לגמרי מקומית ולא תלויה בתמיכת Range requests
+    // בצד השרת - זה בדיוק מה שגרם בעבר לקפיצה חזרה לתחילת ההקלטה תוך כדי ניגון.
+    const contentType = res.headers.get('content-type') || 'audio/mpeg';
+    const blobUrl = URL.createObjectURL(new Blob([buf], {type: contentType}));
+    return { peaks: peaks.map(p => Math.max(0.12, p/max)), duration: audioBuf.duration, blobUrl };
   }catch(err){
     return null;
   }
@@ -1806,10 +1812,26 @@ function buildRecItem(file, token, ext){
   const src = BASE_URL + 'DownloadFile?token=' + encodeURIComponent(token) +
               '&path=' + encodeURIComponent(extPath(ext) + file.name);
 
+  // הבטחה משותפת אחת לכל שורה עבור טעינת/פענוח קובץ ההקלטה המלא - גם חישוב הגל
+  // (row._loadWaveform) וגם הניגון בפועל (ensureAudio, בהמשך) משתמשים באותה קריאה, כדי
+  // שלא יתבצע אותו fetch פעמיים, ובעיקר כדי שהניגון יוכל להשתמש ב-Blob URL המקומי שנוצר
+  // כאן (ר' הערה ב-ensureAudio) במקום לשדר ישירות מהשרת.
+  let waveformDataPromise = null;
+  let waveformDataResult = null;
+  function getWaveformData(){
+    if(!waveformDataPromise){
+      waveformDataPromise = computeWaveform(src).then(result => {
+        waveformDataResult = result;
+        return result;
+      });
+    }
+    return waveformDataPromise;
+  }
+
   // טעינת גל קול אמיתי כאשר הפריט נכנס לתצוגה. אם הקריאה נחסמת (למשל CORS)
   // נשאר הדפוס המדומה שכבר מוצג, כדי שהתצוגה תמיד תיראה כמו הודעה קולית.
   row._loadWaveform = async () => {
-    const result = await computeWaveform(src);
+    const result = await getWaveformData();
     if(result){
       setPeaks(result.peaks);
       if(result.duration){
@@ -1840,14 +1862,38 @@ function buildRecItem(file, token, ext){
 
   function ensureAudio(){
     if(audio) return audio;
-    audio = new Audio(src);
+    // אם קובץ ההקלטה כבר ירד במלואו (למשל כי הגל כבר חושב ברקע לפני שנלחץ ניגון) - מנגנים
+    // ישירות מ-Blob URL מקומי במקום מ-streaming מהשרת. זה קריטי לריצה קדימה/אחורה אמינה תוך
+    // כדי השמעה: אם השרת של ימות המשיח לא תומך ב-Range requests, קפיצה ל-currentTime על
+    // מקור שמתקבל ב-streaming עלולה לגרום לדפדפן לבקש מחדש את הקובץ מההתחלה ולא לקבל את
+    // הבייטים של המיקום המבוקש - ואז ההשמעה "קופצת" רגע למיקום החדש ומיד חוזרת לתחילת
+    // ההקלטה ברגע שהבקשה החוזרת מגיעה. Blob URL הוא לגמרי מקומי אז הבעיה הזו לא קיימת בו.
+    const readyBlobUrl = (waveformDataResult && waveformDataResult.blobUrl) || null;
+    audio = new Audio(readyBlobUrl || src);
+    audio._usingBlob = !!readyBlobUrl;
     // preload='auto' (ולא רק 'metadata') - כדי שהדפדפן יתחיל להוריד את כל קובץ ההקלטה ברקע
-    // כבר מרגע שהיא נכנסת לתצוגה, ולא רק כשלוחצים "נגן". זה הכרחי כדי שריצה קדימה/אחורה
-    // בגל תעבוד באמינות גם תוך כדי השמעה בפועל: אם השרת של ימות המשיח לא תומך ב-Range
-    // requests על קובץ ההקלטה, קפיצה ל-currentTime תוך כדי ניגון עלולה פשוט "לקפוץ" בחזרה
-    // להתחלה (כי הדפדפן לא יכול לשלוף רק את הקטע המבוקש מהשרת) - אבל ברגע שכל הקובץ כבר
-    // ירד וזמין מקומית בדפדפן, קפיצה לכל נקודה היא מקומית לגמרי ולא תלויה בשרת בכלל.
+    // כבר מרגע שהיא נכנסת לתצוגה, ולא רק כשלוחצים "נגן".
     audio.preload = 'auto';
+
+    // אם הקובץ עדיין לא היה מוכן כ-Blob ברגע שנוצר האלמנט (התחלנו לנגן מה-streaming URL כדי
+    // שההפעלה תרגיש מיידית) - ברגע שההורדה המלאה לצורך הגל מסתיימת, מחליפים את המקור ל-Blob
+    // המקומי "בשקט" (שומרים על אותו מיקום/מצב ניגון), כדי שמעכשיו והלאה כל seek יהיה מקומי.
+    if(!readyBlobUrl){
+      getWaveformData().then(result => {
+        if(!result || !result.blobUrl || !audio || audio._usingBlob) return;
+        const wasPlaying = !audio.paused;
+        const t = audio.currentTime || 0;
+        audio._usingBlob = true;
+        const onReady = () => {
+          audio.removeEventListener('loadedmetadata', onReady);
+          audio.currentTime = t;
+          if(wasPlaying) audio.play();
+        };
+        audio.addEventListener('loadedmetadata', onReady);
+        audio.src = result.blobUrl;
+      });
+    }
+
     audio.addEventListener('loadedmetadata', () => {
       if(audio.paused) timeLabel.textContent = fmtRemaining(audio.currentTime, audio.duration);
       if(audio.duration) durVal.textContent = fmtTime(audio.duration);
@@ -1964,6 +2010,7 @@ function buildRecItem(file, token, ext){
       const data = await res.json();
       if(data.responseStatus === 'OK'){
         if(activeAudio === audio){ activeAudio = null; activePlayBtn = null; activeSetPlayed = null; }
+        if(waveformDataResult && waveformDataResult.blobUrl) URL.revokeObjectURL(waveformDataResult.blobUrl);
         renderedFileNames.delete(file.name);
         row.remove();
       } else {
