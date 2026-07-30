@@ -350,6 +350,38 @@
   .ov-box .btnrow button.secondary:hover{background:var(--border);}
   .ov-box .btnrow button.danger-text{color:var(--danger);}
 
+  .wizard-entry-btn{
+    display:flex;align-items:center;gap:10px;width:100%;
+    background:#F0FBF8;border:1px solid #BFE9DE;border-radius:10px;
+    padding:10px 12px;margin-bottom:14px;cursor:pointer;text-align:right;transition:background .15s;
+  }
+  .wizard-entry-btn:hover{background:#E4F7F1;}
+  .wizard-entry-icon{
+    width:32px;height:32px;flex-shrink:0;border-radius:50%;background:var(--accent);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .wizard-entry-icon svg{width:17px;height:17px;}
+  .wizard-entry-text{display:flex;flex-direction:column;gap:1px;min-width:0;}
+  .wizard-entry-text b{font-size:.86rem;color:var(--text);}
+  .wizard-entry-text span{font-size:.74rem;color:var(--text-dim);}
+
+  .wizard-progress{font-size:.72rem;color:var(--text-faint);font-weight:600;margin-bottom:12px;}
+  .wizard-step{display:none;}
+  .wizard-step.active{display:block;}
+  .wizard-step h3{margin:0 0 8px;font-size:1.02rem;font-weight:700;}
+  .wizard-text{font-size:.85rem;color:var(--text-dim);line-height:1.65;margin:0 0 10px;}
+  .wizard-steplist{margin:0 0 12px;padding-inline-start:20px;font-size:.83rem;color:var(--text-dim);line-height:1.75;}
+  .wizard-step label{display:block;font-size:.8rem;font-weight:600;margin:14px 0 5px;}
+  .wizard-link{
+    display:inline-flex;align-items:center;gap:6px;
+    color:var(--accent);font-weight:600;font-size:.82rem;text-decoration:none;margin-bottom:14px;
+  }
+  .wizard-link:hover{text-decoration:underline;}
+  .wizard-link svg{width:14px;height:14px;flex-shrink:0;}
+  .wizard-summary{background:var(--bg);border-radius:8px;padding:12px 14px;font-size:.8rem;line-height:1.9;color:var(--text-dim);}
+  .wizard-summary b{color:var(--text);}
+  .wizard-exit{display:block;margin:14px auto 0;}
+
   #contactsList{display:flex;flex-direction:column;gap:6px;margin-top:6px;max-height:50vh;overflow-y:auto;}
   .contact-row{
     display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;cursor:pointer;
@@ -447,6 +479,15 @@
 <div id="settingsOverlay" class="ov">
   <div class="ov-box">
     <h2>חיבור למערכת ימות המשיח</h2>
+    <button type="button" class="wizard-entry-btn" id="openWizardBtn">
+      <span class="wizard-entry-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </span>
+      <span class="wizard-entry-text">
+        <b>מדריך למתחיל</b>
+        <span>לא בטוחים מה למלא? נעבור יחד שלב אחר שלב</span>
+      </span>
+    </button>
     <div class="sub">פרטי החיבור נשמרים רק בדפדפן שלכם (localStorage). אנשי הקשר נשמרים בגיליון Google Sheets פרטי - שלכם בלבד - לפי הכתובת שתגדירו למטה.</div>
 
     <label for="tokenInput">טוקן (מספר מערכת:סיסמה)</label>
@@ -476,6 +517,74 @@
       <button class="secondary" id="closeSettingsBtn">סגירה</button>
       <button class="primary" id="saveSettingsBtn">שמירה וטעינה</button>
     </div>
+  </div>
+</div>
+
+<div id="wizardOverlay" class="ov">
+  <div class="ov-box">
+    <div class="wizard-progress" id="wizardProgress">שלב 1 מתוך 6</div>
+
+    <div class="wizard-step active" data-step="0">
+      <h3>ברוכים הבאים!</h3>
+      <p class="wizard-text">המדריך הקצר הזה יעזור לכם לחבר את האתר בפעם הראשונה, שלב אחר שלב. נעבור יחד על פרטי ההתחברות לימות המשיח, ובאופן אופציונלי גם על חיבור אנשי קשר וצינתוקים. אפשר לצאת מהמדריך בכל שלב ולהמשיך למלא הכל ידנית במסך ההגדרות הרגיל.</p>
+    </div>
+
+    <div class="wizard-step" data-step="1" data-require="token">
+      <h3>שלב 1 - טוקן ההתחברות</h3>
+      <p class="wizard-text">כדי שהאתר יוכל לדבר עם ימות המשיח צריך "טוקן": מספר המערכת שלכם, ואחריו נקודתיים וסיסמה, למשל <bdi dir="ltr">0771234567:1234</bdi>.</p>
+      <p class="wizard-text">מספר המערכת הוא מספר הטלפון שדרכו נכנסים לניהול ימות המשיח. לגבי הסיסמה - אפשר להשתמש בסיסמת הניהול הראשית, אבל <b>מומלץ מאוד</b> להגדיר בממשק הניהול סיסמה ייעודית לשימוש כאן בלבד, כי הטוקן נשלח בגלוי בכתובת כל בקשה מהדפדפן.</p>
+      <a class="wizard-link" href="https://www.call2all.co.il" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        פתיחת ממשק הניהול של ימות המשיח
+      </a>
+      <label for="wizTokenInput">טוקן (מספר מערכת:סיסמה)</label>
+      <input type="text" id="wizTokenInput" placeholder="0771234567:1234" dir="ltr">
+    </div>
+
+    <div class="wizard-step" data-step="2">
+      <h3>שלב 2 - מספר שלוחה</h3>
+      <p class="wizard-text">זהו מספר השלוחה שממנה יישלפו ההקלטות שתרצו להציג באתר (הנתיב <bdi dir="ltr">ivr2:/&lt;שלוחה&gt;/</bdi>). אם אתם לא בטוחים מה המספר, אפשר לבדוק בממשק הניהול של ימות המשיח תחת "ניהול תפריטים". קבצים שאינם הקלטות אמיתיות (כמו קבצי מערכת) מסוננים אוטומטית ולא יוצגו.</p>
+      <label for="wizExtInput">מספר שלוחה</label>
+      <input type="text" id="wizExtInput" placeholder="1" dir="ltr" value="1">
+    </div>
+
+    <div class="wizard-step" data-step="3">
+      <h3>שלב 3 - אנשי קשר (אופציונלי)</h3>
+      <p class="wizard-text">אם תרצו ששמות ותמונות של אנשי קשר יוצגו אוטומטית ליד הקלטות שהתקבלו מהם, צריך לחבר גיליון Google Sheets פרטי דרך שירות בשם SheetDB. זה שלב אופציונלי לגמרי - אפשר לדלג ולהוסיף מאוחר יותר דרך ההגדרות.</p>
+      <ol class="wizard-steplist">
+        <li>נכנסים ל-SheetDB ונרשמים (יש תוכנית חינמית).</li>
+        <li>מחברים גיליון Google Sheets חדש או קיים, כשבשורה הראשונה שלו כותרות העמודות: <bdi dir="ltr">SystemKey, ContactId, Name, Phone, PhotoUrl, UpdatedAt</bdi>.</li>
+        <li>SheetDB ייתן כתובת API (Base URL) - מעתיקים אותה.</li>
+        <li>מדביקים את הכתובת בשדה שלמטה.</li>
+      </ol>
+      <a class="wizard-link" href="https://sheetdb.io" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        פתיחת sheetdb.io
+      </a>
+      <label for="wizContactsApiInput">כתובת API לאנשי קשר (SheetDB)</label>
+      <input type="text" id="wizContactsApiInput" placeholder="https://sheetdb.io/api/v1/xxxxxxxxxx" dir="ltr">
+    </div>
+
+    <div class="wizard-step" data-step="4">
+      <h3>שלב 4 - צינתוק לרשימה (אופציונלי)</h3>
+      <p class="wizard-text">אפשר להגדיר שבכל הקלטה חדשה תישלח אוטומטית שיחת צינתוק לכל המספרים ברשימת צינתוקים שהגדרתם בימות המשיח (תחת "ניהול רשימות צינתוקים במודול צינתוקים חינמיים"). גם זה אופציונלי - אפשר להשאיר ריק ולדלג.</p>
+      <label for="wizTzintukListInput">מספר/שם רשימת הצינתוקים</label>
+      <input type="text" id="wizTzintukListInput" placeholder="השאירו ריק לביטול" dir="ltr">
+      <label for="wizTzintukCallerIdInput">זיהוי מתקשר לצינתוק</label>
+      <input type="text" id="wizTzintukCallerIdInput" placeholder="השאירו ריק לזיהוי ברירת מחדל" dir="ltr">
+    </div>
+
+    <div class="wizard-step" data-step="5">
+      <h3>סיימתם!</h3>
+      <p class="wizard-text">אלה הפרטים שהוזנו. אפשר לשנות כל אחד מהם בכל רגע דרך כפתור ההגדרות.</p>
+      <div class="wizard-summary" id="wizardSummary"></div>
+    </div>
+
+    <div class="btnrow">
+      <button class="secondary" id="wizardBackBtn">חזרה</button>
+      <button class="primary" id="wizardNextBtn">הבא</button>
+    </div>
+    <button type="button" class="linklike wizard-exit" id="wizardExitBtn">יציאה מהמדריך</button>
   </div>
 </div>
 
@@ -662,6 +771,95 @@ document.getElementById('saveSettingsBtn').onclick = () => {
   localStorage.setItem(LS_CONTACTS_API, contactsApiInput.value.trim());
   closeSettings();
   fetchContactsFromServer().then(loadRecordings);
+};
+
+// ===== מדריך למתחיל - עוזר הגדרה שלב-אחר-שלב =====
+// עובר עם המשתמש על כל הפרטים הדרושים בזה אחר זה (טוקן, שלוחה, אנשי קשר, צינתוק),
+// עם הסבר ולינקים רלוונטיים לכל שלב, ושומר את הכל בסוף באותם מפתחות localStorage
+// שמשמשים גם את מסך ההגדרות הרגיל - כך שאפשר לעבור חופשי בין השניים.
+const wizardOverlay = document.getElementById('wizardOverlay');
+const wizardStepsEls = Array.from(document.querySelectorAll('.wizard-step'));
+const wizardProgress = document.getElementById('wizardProgress');
+const wizardBackBtn = document.getElementById('wizardBackBtn');
+const wizardNextBtn = document.getElementById('wizardNextBtn');
+const wizardExitBtn = document.getElementById('wizardExitBtn');
+const wizardSummary = document.getElementById('wizardSummary');
+const wizTokenInput = document.getElementById('wizTokenInput');
+const wizExtInput = document.getElementById('wizExtInput');
+const wizContactsApiInput = document.getElementById('wizContactsApiInput');
+const wizTzintukListInput = document.getElementById('wizTzintukListInput');
+const wizTzintukCallerIdInput = document.getElementById('wizTzintukCallerIdInput');
+let wizardStepIndex = 0;
+
+function openWizard(){
+  wizTokenInput.value = getToken();
+  wizExtInput.value = getExt() || '1';
+  wizContactsApiInput.value = getContactsApiUrl();
+  wizTzintukListInput.value = getTzintukList();
+  wizTzintukCallerIdInput.value = getTzintukCallerId();
+  wizardStepIndex = 0;
+  showWizardStep(0);
+  closeSettings();
+  wizardOverlay.classList.add('open');
+}
+function exitWizard(){
+  wizardOverlay.classList.remove('open');
+}
+function showWizardStep(i){
+  wizardStepsEls.forEach((el, idx) => el.classList.toggle('active', idx === i));
+  wizardProgress.textContent = 'שלב ' + (i+1) + ' מתוך ' + wizardStepsEls.length;
+  wizardBackBtn.style.visibility = i === 0 ? 'hidden' : 'visible';
+  wizardNextBtn.textContent = (i === wizardStepsEls.length - 1) ? 'שמירה וסיום' : 'הבא';
+  if(i === wizardStepsEls.length - 1) renderWizardSummary();
+}
+function renderWizardSummary(){
+  const rows = [
+    ['טוקן', wizTokenInput.value.trim() || '—'],
+    ['מספר שלוחה', wizExtInput.value.trim() || '1'],
+    ['כתובת API לאנשי קשר', wizContactsApiInput.value.trim() || 'לא הוגדר'],
+    ['רשימת צינתוקים', wizTzintukListInput.value.trim() || 'לא הוגדר'],
+    ['זיהוי מתקשר לצינתוק', wizTzintukCallerIdInput.value.trim() || 'לא הוגדר']
+  ];
+  wizardSummary.innerHTML = rows.map(([label, val]) =>
+    '<div><b>' + label + ':</b> <bdi dir="ltr">' + val.replace(/</g,'&lt;') + '</bdi></div>'
+  ).join('');
+}
+function finishWizard(){
+  const t = wizTokenInput.value.trim();
+  if(!t){
+    alert('נא להזין טוקן לפני הסיום');
+    wizardStepIndex = 1;
+    showWizardStep(1);
+    return;
+  }
+  localStorage.setItem(LS_TOKEN, t);
+  localStorage.setItem(LS_EXT, wizExtInput.value.trim() || '1');
+  localStorage.setItem(LS_TZINTUK_LIST, wizTzintukListInput.value.trim());
+  localStorage.setItem(LS_TZINTUK_CALLERID, wizTzintukCallerIdInput.value.trim());
+  localStorage.setItem(LS_CONTACTS_API, wizContactsApiInput.value.trim());
+  exitWizard();
+  fetchContactsFromServer().then(loadRecordings);
+}
+
+document.getElementById('openWizardBtn').onclick = openWizard;
+wizardExitBtn.onclick = () => { exitWizard(); openSettings(); };
+wizardBackBtn.onclick = () => {
+  if(wizardStepIndex === 0) return;
+  wizardStepIndex--;
+  showWizardStep(wizardStepIndex);
+};
+wizardNextBtn.onclick = () => {
+  const stepEl = wizardStepsEls[wizardStepIndex];
+  if(stepEl.dataset.require === 'token' && !wizTokenInput.value.trim()){
+    alert('נא להזין טוקן לפני שממשיכים, או ללחוץ על "יציאה מהמדריך" כדי למלא זאת אחר כך');
+    return;
+  }
+  if(wizardStepIndex === wizardStepsEls.length - 1){
+    finishWizard();
+    return;
+  }
+  wizardStepIndex++;
+  showWizardStep(wizardStepIndex);
 };
 
 // ===== צינתוק לרשימת מנויים בהקלטה חדשה =====
@@ -1883,7 +2081,7 @@ async function uploadRecording(blob){
 }
 
 if(!getToken()){
-  openSettings();
+  openWizard();
 } else {
   fetchContactsFromServer().then(loadRecordings);
 }
