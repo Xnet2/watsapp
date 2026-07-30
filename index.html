@@ -1835,9 +1835,13 @@ function buildRecItem(file, token, ext){
   function ensureAudio(){
     if(audio) return audio;
     audio = new Audio(src);
-    // preload='metadata' (ולא 'none') כדי ש-duration יהיה זמין מהר ככל האפשר גם בלי ללחוץ
-    // "נגן" קודם - כך אפשר לגלול/להריץ קדימה בגל גם לפני שההקלטה הופעלה ולו פעם אחת.
-    audio.preload = 'metadata';
+    // preload='auto' (ולא רק 'metadata') - כדי שהדפדפן יתחיל להוריד את כל קובץ ההקלטה ברקע
+    // כבר מרגע שהיא נכנסת לתצוגה, ולא רק כשלוחצים "נגן". זה הכרחי כדי שריצה קדימה/אחורה
+    // בגל תעבוד באמינות גם תוך כדי השמעה בפועל: אם השרת של ימות המשיח לא תומך ב-Range
+    // requests על קובץ ההקלטה, קפיצה ל-currentTime תוך כדי ניגון עלולה פשוט "לקפוץ" בחזרה
+    // להתחלה (כי הדפדפן לא יכול לשלוף רק את הקטע המבוקש מהשרת) - אבל ברגע שכל הקובץ כבר
+    // ירד וזמין מקומית בדפדפן, קפיצה לכל נקודה היא מקומית לגמרי ולא תלויה בשרת בכלל.
+    audio.preload = 'auto';
     audio.addEventListener('loadedmetadata', () => {
       if(audio.paused) timeLabel.textContent = fmtRemaining(audio.currentTime, audio.duration);
       if(audio.duration) durVal.textContent = fmtTime(audio.duration);
