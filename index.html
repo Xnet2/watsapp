@@ -447,7 +447,7 @@
 <div id="settingsOverlay" class="ov">
   <div class="ov-box">
     <h2>חיבור למערכת ימות המשיח</h2>
-    <div class="sub">פרטי החיבור נשמרים רק בדפדפן שלכם (localStorage). אנשי הקשר נשמרים בגיליון Google Sheets משותף לפי הטוקן.</div>
+    <div class="sub">פרטי החיבור נשמרים רק בדפדפן שלכם (localStorage). אנשי הקשר נשמרים בגיליון Google Sheets פרטי - שלכם בלבד - לפי הכתובת שתגדירו למטה.</div>
 
     <label for="tokenInput">טוקן (מספר מערכת:סיסמה)</label>
     <input type="text" id="tokenInput" placeholder="0771234567:1234" dir="ltr">
@@ -462,6 +462,10 @@
 
     <label for="tzintukCallerIdInput">זיהוי מתקשר לצינתוק (אופציונלי)</label>
     <input type="text" id="tzintukCallerIdInput" placeholder="השאירו ריק לזיהוי ברירת מחדל" dir="ltr">
+
+    <label for="contactsApiInput">כתובת API לאנשי קשר (SheetDB)</label>
+    <input type="text" id="contactsApiInput" placeholder="https://sheetdb.io/api/v1/xxxxxxxxxx" dir="ltr">
+    <div class="hint">אנשי הקשר ושיוך ההקלטות שלכם נשמרים בגיליון Google Sheets פרטי, דרך שירות SheetDB. צרו גיליון וחיבור SheetDB משלכם (sheetdb.io) עם העמודות SystemKey, ContactId, Name, Phone, PhotoUrl, UpdatedAt, והדביקו כאן את כתובת ה-API שתקבלו משם. כך כל מי שמפרסם את האתר הזה משתמש בגיליון הפרטי שלו, ואף אחד לא רואה את אנשי הקשר של מישהו אחר. בלי כתובת כאן, אנשי הקשר לא ייטענו וההקלטות יוצגו רק לפי המספר הגולמי.</div>
 
     <div class="warn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -478,7 +482,7 @@
 <div id="contactsOverlay" class="ov">
   <div class="ov-box">
     <h2>אנשי קשר</h2>
-    <div class="sub">שם ותמונה יוצגו אוטומטית בהקלטות שמזוהות מהמספר שלהם. אנשי הקשר נשמרים בגיליון Google Sheets ונטענים לפי הטוקן, כך שהם משותפים לכל מכשיר שמתחבר איתו.</div>
+    <div class="sub">שם ותמונה יוצגו אוטומטית בהקלטות שמזוהות מהמספר שלהם. אנשי הקשר נשמרים בגיליון ה-Google Sheets הפרטי שהוגדר בהגדרות, ונטענים לפי הטוקן - כך שהם משותפים לכל מכשיר שמתחבר עם אותו טוקן, אבל לא נגישים למי שמפעיל את האתר עם גיליון אחר.</div>
     <div id="contactsList"></div>
     <div class="btnrow">
       <button class="secondary" id="closeContactsBtn">סגירה</button>
@@ -582,8 +586,12 @@ const LS_EXT = 'yemot_ext';
 const LS_TZINTUK_LIST = 'yemot_tzintuk_list';
 const LS_TZINTUK_CALLERID = 'yemot_tzintuk_callerid';
 
-// ===== אנשי קשר - Google Sheets (דרך Apps Script Web App) =====
-const CONTACTS_API = 'https://sheetdb.io/api/v1/oihuitizk37d7';
+// ===== אנשי קשר - Google Sheets (דרך SheetDB) =====
+// הכתובת אינה קבועה בקוד אלא מוזנת ע"י כל משתמש בהגדרות ונשמרת מקומית בדפדפן (localStorage) -
+// כך שכשהאתר מתפרסם ומופעל ע"י אנשים שונים, כל אחד מפנה לגיליון הפרטי שלו ולא לגיליון משותף
+// שבו אנשים אחרים היו יכולים לראות (או לערוך) את אנשי הקשר וההקלטות המזוהות של כולם.
+const LS_CONTACTS_API = 'yemot_contacts_api';
+function getContactsApiUrl(){ return (localStorage.getItem(LS_CONTACTS_API) || '').trim(); }
 
 // ===== העלאת תמונות - Cloudinary =====
 const CLOUDINARY_CLOUD_NAME = 'rpbok3l7';
@@ -609,6 +617,7 @@ const tokenInput = document.getElementById('tokenInput');
 const extInput = document.getElementById('extInput');
 const tzintukListInput = document.getElementById('tzintukListInput');
 const tzintukCallerIdInput = document.getElementById('tzintukCallerIdInput');
+const contactsApiInput = document.getElementById('contactsApiInput');
 
 let activeAudio = null;
 let activePlayBtn = null;
@@ -633,6 +642,7 @@ function openSettings(){
   extInput.value = getExt();
   tzintukListInput.value = getTzintukList();
   tzintukCallerIdInput.value = getTzintukCallerId();
+  contactsApiInput.value = getContactsApiUrl();
   settingsOverlay.classList.add('open');
 }
 function closeSettings(){ settingsOverlay.classList.remove('open'); }
@@ -649,6 +659,7 @@ document.getElementById('saveSettingsBtn').onclick = () => {
   localStorage.setItem(LS_EXT, e);
   localStorage.setItem(LS_TZINTUK_LIST, tzintukListInput.value.trim());
   localStorage.setItem(LS_TZINTUK_CALLERID, tzintukCallerIdInput.value.trim());
+  localStorage.setItem(LS_CONTACTS_API, contactsApiInput.value.trim());
   closeSettings();
   fetchContactsFromServer().then(loadRecordings);
 };
@@ -725,9 +736,10 @@ function getContacts(){ return contactsCache; }
 // עמודות בגיליון: SystemKey | ContactId | Name | Phone | PhotoUrl | UpdatedAt
 async function fetchContactsFromServer(){
   const token = getToken();
-  if(!token){ contactsCache = []; recAttributionCache = []; return contactsCache; }
+  const apiUrl = getContactsApiUrl();
+  if(!token || !apiUrl){ contactsCache = []; recAttributionCache = []; return contactsCache; }
   try{
-    const url = CONTACTS_API + '/search?SystemKey=' + encodeURIComponent(token);
+    const url = apiUrl + '/search?SystemKey=' + encodeURIComponent(token);
     const res = await fetch(url);
     const rows = await res.json();
     const all = Array.isArray(rows) ? rows : [];
@@ -753,6 +765,8 @@ function getRecordingAttribution(fileName){
 async function saveRecordingAttribution(fileName){
   const me = getMeContact();
   if(!me || !me.phone) return; // בלי איש קשר "אני" עם מספר טלפון, אין מה לשמור
+  const apiUrl = getContactsApiUrl();
+  if(!apiUrl) return; // בלי כתובת API מוגדרת, אין לאן לשמור את השיוך
   const token = getToken();
   const row = {
     SystemKey: token,
@@ -763,7 +777,7 @@ async function saveRecordingAttribution(fileName){
     UpdatedAt: new Date().toISOString()
   };
   try{
-    const res = await fetch(CONTACTS_API, {
+    const res = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ data: [row] })
@@ -780,6 +794,8 @@ async function saveRecordingAttribution(fileName){
 
 // שומר איש קשר בודד בגיליון (הוספה אם חדש, עדכון אם כבר קיים), ומעדכן את המטמון המקומי.
 async function saveContactToServer(contact){
+  const apiUrl = getContactsApiUrl();
+  if(!apiUrl) throw new Error('לא הוגדרה כתובת API לאנשי קשר בהגדרות');
   const token = getToken();
   const row = {
     SystemKey: token,
@@ -792,13 +808,13 @@ async function saveContactToServer(contact){
   const exists = contactsCache.some(c => c.id === contact.id);
   let res;
   if(exists){
-    res = await fetch(CONTACTS_API + '/ContactId/' + encodeURIComponent(contact.id), {
+    res = await fetch(apiUrl + '/ContactId/' + encodeURIComponent(contact.id), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ data: row })
     });
   } else {
-    res = await fetch(CONTACTS_API, {
+    res = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ data: [row] })
@@ -811,7 +827,9 @@ async function saveContactToServer(contact){
 
 // מוחק איש קשר מהגיליון, ומעדכן את המטמון המקומי.
 async function deleteContactFromServer(id){
-  const res = await fetch(CONTACTS_API + '/ContactId/' + encodeURIComponent(id), {
+  const apiUrl = getContactsApiUrl();
+  if(!apiUrl) throw new Error('לא הוגדרה כתובת API לאנשי קשר בהגדרות');
+  const res = await fetch(apiUrl + '/ContactId/' + encodeURIComponent(id), {
     method: 'DELETE'
   });
   if(!res.ok) throw new Error('מחיקה נכשלה (' + res.status + ')');
@@ -858,7 +876,9 @@ function renderContactsList(){
   if(contacts.length === 0){
     const empty = document.createElement('div');
     empty.className = 'empty-contacts';
-    empty.textContent = 'אין עדיין אנשי קשר. הוסיפו איש קשר כדי שהשם והתמונה יוצגו בהקלטות שלו.';
+    empty.textContent = getContactsApiUrl()
+      ? 'אין עדיין אנשי קשר. הוסיפו איש קשר כדי שהשם והתמונה יוצגו בהקלטות שלו.'
+      : 'לא הוגדרה כתובת API לאנשי קשר. היכנסו להגדרות והזינו כתובת SheetDB פרטית כדי להתחיל להוסיף אנשי קשר.';
     contactsList.appendChild(empty);
     return;
   }
