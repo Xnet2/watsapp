@@ -93,6 +93,35 @@
       radial-gradient(circle at 8% 18%, rgba(0,0,0,.02) 0, transparent 45%),
       radial-gradient(circle at 92% 82%, rgba(0,0,0,.02) 0, transparent 45%);
   }
+
+  /* מסך "רשימת המערכות" (מוצג כשיש יותר ממערכת אחת מחוברת) - תופס את כל מקום
+     ה-#list/#bottombar כשמופעל (ר' #app.home-mode) ומציג כל מערכת כמו שורת שיחה בוואטסאפ. */
+  #homeScreen{display:none;flex:1;min-height:0;flex-direction:column;overflow:hidden;background:var(--bg);}
+  #app.home-mode #homeScreen{display:flex;}
+  #app.home-mode #list, #app.home-mode #bottombar{display:none;}
+  #homeListEl{flex:1;overflow-y:auto;padding:6px 8px;}
+  .sys-row{
+    display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:10px;
+    cursor:pointer;background:transparent;transition:background .12s;
+  }
+  .sys-row:hover{background:rgba(0,0,0,.04);}
+  .sys-avatar{
+    width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;
+    background:#DFE5E7;display:flex;align-items:center;justify-content:center;color:var(--text-faint);
+  }
+  .sys-avatar img{width:100%;height:100%;object-fit:cover;}
+  .sys-avatar svg{width:22px;height:22px;}
+  .sys-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+  .sys-toprow{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
+  .sys-label{font-weight:600;font-size:.98rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sys-time{font-size:.72rem;color:var(--text-faint);flex-shrink:0;}
+  .sys-preview{
+    font-size:.82rem;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    display:flex;align-items:center;gap:4px;
+  }
+  .sys-preview svg{width:14px;height:14px;flex-shrink:0;color:var(--text-faint);}
+  .home-empty{padding:50px 24px;text-align:center;color:var(--text-dim);line-height:1.6;}
+
   /* קופסת סטטוס להעלאה בתהליך/שגיאה - לא הודעה אמיתית, לכן נשארת עצמאית */
   .rec-item{
     background:var(--surface);
@@ -447,6 +476,9 @@
   <header>
     <div class="title">
       <div class="title-row">
+        <button class="icon" id="backHomeBtn" title="רשימת המערכות" aria-label="רשימת המערכות" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
         <span class="app-logo" aria-hidden="true">
           <svg viewBox="0 0 40 40" width="26" height="26">
             <circle cx="20" cy="20" r="19" fill="#25D366"/>
@@ -460,6 +492,9 @@
       <span id="extLabel">שלוחה —</span>
     </div>
     <div class="actions">
+      <button class="icon" id="homeAddBtn" title="הוספת מערכת" aria-label="הוספת מערכת" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
       <button class="icon" id="refreshBtn" title="רענון" aria-label="רענון">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       </button>
@@ -474,6 +509,10 @@
 
   <div id="list">
     <div class="status-line" id="statusLine">פותחים הגדרות כדי להתחבר…</div>
+  </div>
+
+  <div id="homeScreen">
+    <div id="homeListEl"></div>
   </div>
 
   <div id="bottombar">
@@ -501,6 +540,9 @@
         <span>לא בטוחים מה למלא? נעבור יחד שלב אחר שלב</span>
       </span>
     </button>
+    <label for="labelInput">שם תצוגה למערכת (אופציונלי)</label>
+    <input type="text" id="labelInput" placeholder="לדוגמה: הבית, העסק" dir="auto">
+
     <label for="tokenInput">מספר מערכת וסיסמה (בפורמט מספר:סיסמה)</label>
     <input type="text" id="tokenInput" placeholder="0771234567:1234" dir="ltr">
 
@@ -516,6 +558,10 @@
     <div class="btnrow">
       <button class="secondary" id="closeSettingsBtn">סגירה</button>
       <button class="primary" id="saveSettingsBtn">שמירה וטעינה</button>
+    </div>
+    <div class="btnrow">
+      <button type="button" class="linklike" id="addAnotherSystemBtn">הוספת מערכת נוספת</button>
+      <button type="button" class="linklike danger" id="deleteSystemBtn">מחיקת מערכת זו</button>
     </div>
   </div>
 </div>
@@ -539,6 +585,8 @@
       </a>
       <label for="wizTokenInput">טוקן (מספר מערכת:סיסמה)</label>
       <input type="text" id="wizTokenInput" placeholder="0771234567:1234" dir="ltr">
+      <label for="wizLabelInput">שם תצוגה למערכת (אופציונלי)</label>
+      <input type="text" id="wizLabelInput" placeholder="לדוגמה: הבית, העסק" dir="auto">
     </div>
 
     <div class="wizard-step" data-step="2">
@@ -711,17 +759,79 @@ window.addEventListener('resize', closeCtxMenu);
 document.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeCtxMenu(); });
 
 const BASE_URL = 'https://www.call2all.co.il/ym/api/';
-const LS_TOKEN = 'yemot_token';
-const LS_EXT = 'yemot_ext';
-const LS_TZINTUK_LIST = 'yemot_tzintuk_list';
-const LS_TZINTUK_CALLERID = 'yemot_tzintuk_callerid';
+
+// ===== מערכות (חשבונות) - תמיכה בכמה מערכות ימות המשיח באותו אתר =====
+// כל "מערכת" היא אובייקט {id, label, token, ext, tzintukList, tzintukCallerId, contactsApi}
+// שנשמר במערך אחד תחת LS_SYSTEMS. LS_ACTIVE_SYSTEM מצביע על ה-id של המערכת שמוצגת כרגע.
+// אם יש יותר ממערכת אחת - נפתח מסך "רשימת מערכות" בסגנון רשימת השיחות של וואטסאפ; עם
+// מערכת אחת בלבד ממשיכים ישר לתוך השיחה שלה, בדיוק כמו ההתנהגות לפני התמיכה בכמה מערכות.
+const LS_SYSTEMS = 'yemot_systems';
+const LS_ACTIVE_SYSTEM = 'yemot_active_system';
+// מפתחות הגרסה הקודמת (מערכת יחידה) - נשארים כאן רק לצורך העברה חד-פעמית של הגדרות
+// קיימות למבנה החדש (ר' migrateLegacySystemIfNeeded), ולא נכתבים אליהם יותר.
+const LEGACY_LS_TOKEN = 'yemot_token';
+const LEGACY_LS_EXT = 'yemot_ext';
+const LEGACY_LS_TZINTUK_LIST = 'yemot_tzintuk_list';
+const LEGACY_LS_TZINTUK_CALLERID = 'yemot_tzintuk_callerid';
+const LEGACY_LS_CONTACTS_API = 'yemot_contacts_api';
+
+function getSystems(){
+  try{ return JSON.parse(localStorage.getItem(LS_SYSTEMS) || '[]'); }catch(err){ return []; }
+}
+function saveSystems(list){ localStorage.setItem(LS_SYSTEMS, JSON.stringify(list)); }
+function genSystemId(){ return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function getActiveSystemId(){ return localStorage.getItem(LS_ACTIVE_SYSTEM) || null; }
+function setActiveSystemId(id){
+  if(id) localStorage.setItem(LS_ACTIVE_SYSTEM, id);
+  else localStorage.removeItem(LS_ACTIVE_SYSTEM);
+}
+function getActiveSystem(){
+  const id = getActiveSystemId();
+  if(!id) return null;
+  return getSystems().find(s => s.id === id) || null;
+}
+function systemLabel(sys){ return (sys && sys.label && sys.label.trim()) || ('שלוחה ' + ((sys && sys.ext) || '1')); }
+
+// יוצר/מעדכן את המערכת הפעילה עם השדות הנתונים. אם אין עדיין מערכת פעילה (למשל בהוספת
+// מערכת חדשה, ר' homeAddBtn) - יוצר רשומה חדשה והופך אותה לפעילה.
+function upsertActiveSystem(fields){
+  const systems = getSystems();
+  let id = getActiveSystemId();
+  let sys = id ? systems.find(s => s.id === id) : null;
+  if(!sys){
+    sys = { id: genSystemId() };
+    systems.push(sys);
+    id = sys.id;
+    setActiveSystemId(id);
+  }
+  Object.assign(sys, fields);
+  sys.label = (fields.label && fields.label.trim()) || sys.label || '';
+  saveSystems(systems);
+  return sys;
+}
+
+function migrateLegacySystemIfNeeded(){
+  if(getSystems().length > 0) return;
+  const legacyToken = localStorage.getItem(LEGACY_LS_TOKEN);
+  if(!legacyToken) return;
+  const sys = {
+    id: genSystemId(),
+    label: '',
+    token: legacyToken,
+    ext: localStorage.getItem(LEGACY_LS_EXT) || '1',
+    tzintukList: localStorage.getItem(LEGACY_LS_TZINTUK_LIST) || '',
+    tzintukCallerId: localStorage.getItem(LEGACY_LS_TZINTUK_CALLERID) || '',
+    contactsApi: localStorage.getItem(LEGACY_LS_CONTACTS_API) || ''
+  };
+  saveSystems([sys]);
+  setActiveSystemId(sys.id);
+}
 
 // ===== אנשי קשר - Google Sheets (דרך SheetDB) =====
-// הכתובת אינה קבועה בקוד אלא מוזנת ע"י כל משתמש בהגדרות ונשמרת מקומית בדפדפן (localStorage) -
-// כך שכשהאתר מתפרסם ומופעל ע"י אנשים שונים, כל אחד מפנה לגיליון הפרטי שלו ולא לגיליון משותף
-// שבו אנשים אחרים היו יכולים לראות (או לערוך) את אנשי הקשר וההקלטות המזוהות של כולם.
-const LS_CONTACTS_API = 'yemot_contacts_api';
-function getContactsApiUrl(){ return (localStorage.getItem(LS_CONTACTS_API) || '').trim(); }
+// הכתובת אינה קבועה בקוד אלא מוזנת ע"י כל משתמש בהגדרות ונשמרת בהגדרות המערכת הפעילה -
+// כך שכשהאתר מתפרסם ומופעל ע"י אנשים שונים (או ע"י אותו אדם עם כמה מערכות), כל מערכת
+// מפנה לגיליון הפרטי שלה ולא לגיליון משותף שבו אנשים אחרים היו יכולים לראות/לערוך.
+function getContactsApiUrl(){ const s = getActiveSystem(); return ((s && s.contactsApi) || '').trim(); }
 
 // ===== העלאת תמונות - Cloudinary =====
 const CLOUDINARY_CLOUD_NAME = 'rpbok3l7';
@@ -743,6 +853,7 @@ const BAR_COUNT = 30;
 const listEl = document.getElementById('list');
 const extLabel = document.getElementById('extLabel');
 const settingsOverlay = document.getElementById('settingsOverlay');
+const labelInput = document.getElementById('labelInput');
 const tokenInput = document.getElementById('tokenInput');
 const extInput = document.getElementById('extInput');
 const tzintukListInput = document.getElementById('tzintukListInput');
@@ -761,16 +872,18 @@ let isPolling = false;
 // את גילוי הקובץ החדש ותרנדר אותו בלי סימון "שלי", לפני שההעלאה עצמה הספיקה לסמן אותו.
 let uploadInProgress = false;
 
-function getToken(){ return localStorage.getItem(LS_TOKEN) || ''; }
-function getExt(){ return localStorage.getItem(LS_EXT) || '1'; }
-function getTzintukList(){ return localStorage.getItem(LS_TZINTUK_LIST) || ''; }
-function getTzintukCallerId(){ return localStorage.getItem(LS_TZINTUK_CALLERID) || ''; }
+function getToken(){ const s = getActiveSystem(); return (s && s.token) || ''; }
+function getExt(){ const s = getActiveSystem(); return (s && s.ext) || '1'; }
+function getTzintukList(){ const s = getActiveSystem(); return (s && s.tzintukList) || ''; }
+function getTzintukCallerId(){ const s = getActiveSystem(); return (s && s.tzintukCallerId) || ''; }
 
 function openSettings(){
+  labelInput.value = (getActiveSystem() && getActiveSystem().label) || '';
   tokenInput.value = getToken();
   extInput.value = getExt();
   tzintukListInput.value = getTzintukList();
   contactsApiInput.value = getContactsApiUrl();
+  deleteSystemBtn.style.display = getActiveSystem() ? 'inline-block' : 'none';
   settingsOverlay.classList.add('open');
 }
 function closeSettings(){ settingsOverlay.classList.remove('open'); }
@@ -783,12 +896,39 @@ document.getElementById('saveSettingsBtn').onclick = () => {
   const t = tokenInput.value.trim();
   const e = extInput.value.trim() || '1';
   if(!t){ alert('נא להזין טוקן'); return; }
-  localStorage.setItem(LS_TOKEN, t);
-  localStorage.setItem(LS_EXT, e);
-  localStorage.setItem(LS_TZINTUK_LIST, tzintukListInput.value.trim());
-  localStorage.setItem(LS_CONTACTS_API, contactsApiInput.value.trim());
+  upsertActiveSystem({
+    token: t,
+    ext: e,
+    label: labelInput.value.trim(),
+    tzintukList: tzintukListInput.value.trim(),
+    contactsApi: contactsApiInput.value.trim()
+  });
   closeSettings();
   fetchContactsFromServer().then(loadRecordings);
+};
+
+// "הוספת מערכת נוספת" מתוך ההגדרות - פותח את המדריך כאילו אין מערכת פעילה, כדי שהוא יתחיל
+// עם שדות ריקים וייצור בסיום מערכת חדשה (ר' upsertActiveSystem) במקום לשכתב את הנוכחית.
+document.getElementById('addAnotherSystemBtn').onclick = () => {
+  closeSettings();
+  setActiveSystemId(null);
+  openWizard();
+};
+
+const deleteSystemBtn = document.getElementById('deleteSystemBtn');
+deleteSystemBtn.onclick = () => {
+  const sys = getActiveSystem();
+  if(!sys) return;
+  const ok = confirm('להסיר את המערכת "' + systemLabel(sys) + '" מהאתר הזה? ' +
+    'פרטי החיבור יימחקו מהמכשיר הזה בלבד - שום דבר לא יימחק בימות המשיח עצמו.');
+  if(!ok) return;
+  const remaining = getSystems().filter(s => s.id !== sys.id);
+  saveSystems(remaining);
+  setActiveSystemId(null);
+  closeSettings();
+  if(remaining.length === 0){ openWizard(); }
+  else if(remaining.length === 1){ enterSystem(remaining[0].id); }
+  else { showHome(); }
 };
 
 // ===== מדריך למתחיל - עוזר הגדרה שלב-אחר-שלב =====
@@ -803,6 +943,7 @@ const wizardNextBtn = document.getElementById('wizardNextBtn');
 const wizardExitBtn = document.getElementById('wizardExitBtn');
 const wizardSummary = document.getElementById('wizardSummary');
 const wizTokenInput = document.getElementById('wizTokenInput');
+const wizLabelInput = document.getElementById('wizLabelInput');
 const wizExtInput = document.getElementById('wizExtInput');
 const wizContactsApiInput = document.getElementById('wizContactsApiInput');
 const wizTzintukListInput = document.getElementById('wizTzintukListInput');
@@ -811,6 +952,7 @@ let wizardStepIndex = 0;
 
 function openWizard(){
   wizTokenInput.value = getToken();
+  wizLabelInput.value = (getActiveSystem() && getActiveSystem().label) || '';
   wizExtInput.value = getExt() || '1';
   wizContactsApiInput.value = getContactsApiUrl();
   wizTzintukListInput.value = getTzintukList();
@@ -832,6 +974,7 @@ function showWizardStep(i){
 }
 function renderWizardSummary(){
   const rows = [
+    ['שם תצוגה', wizLabelInput.value.trim() || 'לא הוגדר (יוצג לפי מספר השלוחה)'],
     ['טוקן', wizTokenInput.value.trim() || '—'],
     ['מספר שלוחה', wizExtInput.value.trim() || '1'],
     ['כתובת API לאנשי קשר', wizContactsApiInput.value.trim() || 'לא הוגדר'],
@@ -850,13 +993,16 @@ function finishWizard(){
     showWizardStep(1);
     return;
   }
-  localStorage.setItem(LS_TOKEN, t);
-  localStorage.setItem(LS_EXT, wizExtInput.value.trim() || '1');
-  localStorage.setItem(LS_TZINTUK_LIST, wizTzintukListInput.value.trim());
-  localStorage.setItem(LS_TZINTUK_CALLERID, wizTzintukCallerIdInput.value.trim());
-  localStorage.setItem(LS_CONTACTS_API, wizContactsApiInput.value.trim());
+  const sys = upsertActiveSystem({
+    token: t,
+    label: wizLabelInput.value.trim(),
+    ext: wizExtInput.value.trim() || '1',
+    tzintukList: wizTzintukListInput.value.trim(),
+    tzintukCallerId: wizTzintukCallerIdInput.value.trim(),
+    contactsApi: wizContactsApiInput.value.trim()
+  });
   exitWizard();
-  fetchContactsFromServer().then(loadRecordings);
+  enterSystem(sys.id);
 }
 
 document.getElementById('openWizardBtn').onclick = openWizard;
@@ -879,6 +1025,152 @@ wizardNextBtn.onclick = () => {
   wizardStepIndex++;
   showWizardStep(wizardStepIndex);
 };
+
+// ===== מסך "רשימת מערכות" (בסגנון רשימת השיחות של וואטסאפ) =====
+// מוצג רק כשמוגדרת יותר ממערכת אחת - כל שורה היא מערכת, עם אווטאר/שם ותצוגה מקדימה
+// של מי שלח את ההודעה האחרונה בה. עם מערכת אחת בלבד נכנסים ישר לתוכה, כמו קודם.
+const appEl = document.getElementById('app');
+const homeListEl = document.getElementById('homeListEl');
+const backHomeBtn = document.getElementById('backHomeBtn');
+const homeAddBtn = document.getElementById('homeAddBtn');
+const refreshBtnEl = document.getElementById('refreshBtn');
+const contactsBtnEl = document.getElementById('contactsBtn');
+const settingsBtnEl = document.getElementById('settingsBtn');
+let inHomeMode = false;
+
+function updateHeaderForMode(){
+  const systems = getSystems();
+  refreshBtnEl.style.display = inHomeMode ? 'none' : 'flex';
+  contactsBtnEl.style.display = inHomeMode ? 'none' : 'flex';
+  settingsBtnEl.style.display = inHomeMode ? 'none' : 'flex';
+  homeAddBtn.style.display = inHomeMode ? 'flex' : 'none';
+  backHomeBtn.style.display = (!inHomeMode && systems.length > 1) ? 'flex' : 'none';
+  if(inHomeMode){
+    extLabel.textContent = systems.length + (systems.length === 1 ? ' מערכת מחוברת' : ' מערכות מחוברות');
+  }
+}
+
+function showHome(){
+  inHomeMode = true;
+  appEl.classList.add('home-mode');
+  updateHeaderForMode();
+  renderHome();
+}
+function showConversation(){
+  inHomeMode = false;
+  appEl.classList.remove('home-mode');
+  updateHeaderForMode();
+}
+// עוברים למערכת נתונה: הופכים אותה לפעילה, עוברים למסך השיחה, וטוענים את אנשי הקשר
+// וההקלטות שלה - בדיוק כמו הטעינה הרגילה בכניסה לאתר.
+function enterSystem(id){
+  setActiveSystemId(id);
+  showConversation();
+  fetchContactsFromServer().then(loadRecordings);
+}
+backHomeBtn.onclick = showHome;
+homeAddBtn.onclick = () => { setActiveSystemId(null); openWizard(); };
+
+// בונה שורת מערכת ברשימה (שלד ראשוני שמוצג מיד, לפני שהתצוגה המקדימה נטענת ברקע).
+function buildSystemRow(sys){
+  const row = document.createElement('div');
+  row.className = 'sys-row';
+  row.onclick = () => enterSystem(sys.id);
+
+  const avatar = document.createElement('div');
+  avatar.className = 'sys-avatar';
+  avatar.innerHTML = ICON_PERSON;
+
+  const body = document.createElement('div');
+  body.className = 'sys-body';
+  const topRow = document.createElement('div');
+  topRow.className = 'sys-toprow';
+  const label = document.createElement('span');
+  label.className = 'sys-label';
+  label.textContent = systemLabel(sys);
+  const time = document.createElement('span');
+  time.className = 'sys-time';
+  time.textContent = '';
+  topRow.appendChild(label);
+  topRow.appendChild(time);
+
+  const preview = document.createElement('div');
+  preview.className = 'sys-preview';
+  preview.innerHTML = 'טוען הודעה אחרונה…';
+
+  body.appendChild(topRow);
+  body.appendChild(preview);
+  row.appendChild(avatar);
+  row.appendChild(body);
+
+  row._avatar = avatar;
+  row._time = time;
+  row._preview = preview;
+  return row;
+}
+
+// שולף עבור קובץ הקלטה בודד את פרטי השולח (התאמה לפי מספר טלפון מול רשימת אנשי קשר
+// נתונה) - גרסה עצמאית של אותו היגיון שמופעל בכל הודעה בתוך buildRecItem, כדי שהתצוגה
+// המקדימה ברשימת המערכות תוכל להשתמש בו בלי להיכנס בפועל למערכת ולטעון את כל השיחה.
+function resolveFileSender(file, contacts){
+  const phoneInfo = parsePhoneAndDate(file.name);
+  const fallbackPhone = phoneInfo ? null : extractPhoneFallback(file);
+  const matchedPhone = phoneInfo ? phoneInfo.phone : fallbackPhone;
+  let contact = null;
+  if(matchedPhone){
+    const target = normalizePhone(matchedPhone);
+    contact = contacts.find(c => normalizePhone(c.phone) === target) || null;
+  }
+  const dateLabel = phoneInfo ? phoneInfo.date : extractDateLabel(file);
+  const displayName = contact ? contact.name : (matchedPhone || 'לא מזוהה');
+  return { contact, displayName, dateLabel };
+}
+
+// טוען ברקע את ההקלטה האחרונה ואת אנשי הקשר של מערכת נתונה, ומעדכן את שורתה ברשימה -
+// לכל מערכת בנפרד ובמקביל, כדי שמערכת איטית/לא זמינה לא תעכב את הצגת האחרות.
+async function loadSystemRowPreview(sys, row){
+  try{
+    const [files, contacts] = await Promise.all([
+      fetchFileList(sys.token, sys.ext || '1').catch(() => []),
+      (async () => {
+        if(!sys.contactsApi) return [];
+        try{
+          const res = await fetch(sys.contactsApi + '/search?SystemKey=' + encodeURIComponent(sys.token));
+          const rows = await res.json();
+          return (Array.isArray(rows) ? rows : [])
+            .filter(r => !String(r.ContactId||'').startsWith('rec:'))
+            .map(r => ({ id: r.ContactId, name: r.Name, phone: r.Phone, photo: r.PhotoUrl || '' }));
+        }catch(err){ return []; }
+      })()
+    ]);
+    const last = files[files.length - 1];
+    if(!last){
+      row._preview.textContent = 'אין עדיין הודעות';
+      return;
+    }
+    const sender = resolveFileSender(last, contacts);
+    row._avatar.innerHTML = contactAvatarHTML(sender.contact || (sender.displayName ? {name: sender.displayName} : null));
+    row._preview.innerHTML = ICON_MIC + '<span></span>';
+    row._preview.querySelector('span').textContent = sender.displayName;
+    if(sender.dateLabel) row._time.textContent = sender.dateLabel.split(' ')[0];
+  }catch(err){
+    row._preview.textContent = 'שגיאה בטעינת המערכת';
+  }
+}
+
+function renderHome(){
+  const systems = getSystems();
+  homeListEl.innerHTML = '';
+  if(systems.length === 0){
+    openWizard();
+    return;
+  }
+  systems.forEach(sys => {
+    const row = buildSystemRow(sys);
+    homeListEl.appendChild(row);
+    loadSystemRowPreview(sys, row);
+  });
+}
 
 // ===== צינתוק לרשימת מנויים בהקלטה חדשה =====
 // שולח שיחת צינתוק לכל המספרים הרשומים ברשימת צינתוקים (ניהול רשימות צינתוקים
@@ -2283,10 +2575,14 @@ async function uploadRecording(blob){
   }
 }
 
-if(!getToken()){
+migrateLegacySystemIfNeeded();
+const bootSystems = getSystems();
+if(bootSystems.length === 0){
   openWizard();
+} else if(bootSystems.length === 1){
+  enterSystem(bootSystems[0].id);
 } else {
-  fetchContactsFromServer().then(loadRecordings);
+  showHome();
 }
 </script>
 </body>
