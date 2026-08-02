@@ -484,6 +484,16 @@
   .linklike{background:none;border:none;color:var(--accent);font-size:.78rem;font-weight:600;cursor:pointer;padding:4px;font-family:inherit;}
   .linklike.danger{color:var(--danger);}
 
+  /* התראת "טוסט" קטנה וזמנית (למשל אישור העתקת קישור) - לא חוסמת ולא דורשת סגירה */
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
+    background:#111B21;color:#fff;padding:11px 18px;border-radius:10px;
+    font-size:.85rem;font-weight:600;box-shadow:0 4px 18px rgba(0,0,0,.25);
+    opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;z-index:2000;
+    max-width:90vw;text-align:center;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
   #cropStage{
     position:relative;width:260px;height:260px;max-width:100%;margin:12px auto 4px;
     border-radius:50%;overflow:hidden;background:#111;touch-action:none;cursor:grab;
@@ -601,8 +611,19 @@
       <button type="button" class="linklike" id="addAnotherSystemBtn">הוספת מערכת נוספת</button>
       <button type="button" class="linklike danger" id="deleteSystemBtn">מחיקת מערכת זו</button>
     </div>
+    <button type="button" class="wizard-entry-btn" id="inviteLinkBtn" style="display:none;">
+      <span class="wizard-entry-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      </span>
+      <span class="wizard-entry-text">
+        <b>יצירת קישור הזמנה לחברי הקבוצה</b>
+        <span>קישור שנכנס ישירות למערכת הזו, בלי להזין ובלי להציג את פרטי החיבור</span>
+      </span>
+    </button>
   </div>
 </div>
+
+<div id="toastEl" class="toast"></div>
 
 <div id="wizardOverlay" class="ov">
   <div class="ov-box">
@@ -813,6 +834,29 @@ const LEGACY_LS_TZINTUK_LIST = 'yemot_tzintuk_list';
 const LEGACY_LS_TZINTUK_CALLERID = 'yemot_tzintuk_callerid';
 const LEGACY_LS_CONTACTS_API = 'yemot_contacts_api';
 
+// הצגת הודעת "טוסט" קטנה וזמנית בתחתית המסך (למשל אישור העתקת קישור הזמנה)
+const toastEl = document.getElementById('toastEl');
+let toastTimer = null;
+function showToast(msg){
+  if(!toastEl) return;
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200);
+}
+
+// המרת מחרוזת (כולל עברית/יוניקוד) ל-Base64 URL-safe וחזרה - משמש לקידוד פרטי מערכת
+// בתוך קישור הזמנה (ר' generateInviteLink / applyInviteLinkIfPresent) בלי לחשוף אותם כטקסט גלוי.
+function b64UrlEncode(str){
+  const b64 = btoa(unescape(encodeURIComponent(str)));
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function b64UrlDecode(b64url){
+  let b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
+  while(b64.length % 4) b64 += '=';
+  return decodeURIComponent(escape(atob(b64)));
+}
+
 function getSystems(){
   try{ return JSON.parse(localStorage.getItem(LS_SYSTEMS) || '[]'); }catch(err){ return []; }
 }
@@ -961,11 +1005,89 @@ function openSettings(){
   tzintukListInput.value = getTzintukList();
   contactsApiInput.value = getContactsApiUrl();
   deleteSystemBtn.style.display = sys ? 'inline-block' : 'none';
+  inviteLinkBtn.style.display = sys ? 'flex' : 'none';
   settingsTitle.textContent = sys ? 'עריכת מערכת' : 'חיבור מערכת חדשה';
   renderSettingsSystemsList();
   settingsOverlay.classList.add('open');
 }
 function closeSettings(){ settingsOverlay.classList.remove('open'); }
+
+// ===== קישור הזמנה לחברי קבוצה =====
+// מי שהגדיר מערכת (טוקן, שלוחה, אנשי קשר וכו') יכול לייצר קישור מיוחד שמעביר לחברי
+// הקבוצה שלו: פתיחת הקישור טוענת את אותם פרטי חיבור אוטומטית במכשיר של מי שקיבל אותו,
+// בלי להציג לו בשום שלב את הטוקן/הקישורים/שאר הפרטים - לא בשדה בטופס, לא ב-alert
+// ולא ב-console. הפרטים מקודדים (לא מוצפנים באמת! ר' הערה למטה) בפרמטר קצר בכתובת,
+// ומיד עם הטעינה (ר' applyInviteLinkIfPresent) נמחקים מהכתובת בשורת הכתובת של הדפדפן.
+const INVITE_PARAM = 'j';
+const inviteLinkBtn = document.getElementById('inviteLinkBtn');
+inviteLinkBtn.onclick = async () => {
+  const sys = getActiveSystem();
+  if(!sys){ return; }
+  const payload = {
+    label: sys.label || '',
+    token: sys.token || '',
+    ext: sys.ext || '1',
+    tzintukList: sys.tzintukList || '',
+    tzintukCallerId: sys.tzintukCallerId || '',
+    contactsApi: sys.contactsApi || ''
+  };
+  const encoded = b64UrlEncode(JSON.stringify(payload));
+  const link = location.origin + location.pathname + '?' + INVITE_PARAM + '=' + encoded;
+  try{
+    await navigator.clipboard.writeText(link);
+    showToast('קישור ההזמנה הועתק! אפשר לשלוח אותו לחברי הקבוצה');
+  }catch(err){
+    // fallback למקרה שה-clipboard API חסום (למשל דפדפן ישן/הרשאות) - מציגים prompt לבחירה/העתקה ידנית
+    window.prompt('העתיקו את קישור ההזמנה:', link);
+  }
+};
+
+// אם נכנסו לאתר עם קישור הזמנה (?j=...) - קוראים את פרטי המערכת המקודדים בו, מוסיפים/
+// מעדכנים מערכת בהתאם ונכנסים אליה ישירות. חשוב: הפונקציה הזו לא כותבת שום דבר מהמידע
+// המפוענח למסך, לטופס או ל-console בשום שלב, ומנקה את הפרמטר מהכתובת מיד עם הקריאה -
+// כך שמי שקיבל את הקישור לא רואה טוקן, כתובות API או כל פרט אחר, גם אם יפתח כלי פיתוח.
+// הערה (למפתח בלבד, לא מוצג למשתמש): זהו קידוד (Base64) ולא הצפנה אמיתית - מי שממש
+// ינתח את הקישור עצמו (למשל דרך ההיסטוריה של הדפדפן, אם הספיק להיפתח לפני הניקוי) יכול
+// עקרונית לפענח אותו. זה מספיק כדי שהמידע לא "יוצג" באתר כפי שביקשת, אבל זו לא הצפנה.
+function applyInviteLinkIfPresent(){
+  const params = new URLSearchParams(location.search);
+  const raw = params.get(INVITE_PARAM);
+  if(!raw) return false;
+  // מנקים את הפרמטר מהכתובת מייד, לפני כל עיבוד נוסף - כדי לצמצם למינימום את הזמן
+  // שבו הוא מופיע (מקודד) בשורת הכתובת.
+  history.replaceState(null, '', location.pathname + location.hash);
+  let payload;
+  try{
+    payload = JSON.parse(b64UrlDecode(raw));
+  }catch(err){
+    return false;
+  }
+  if(!payload || !payload.token) return false;
+
+  // אם כבר קיימת אצל המשתמש הזה מערכת עם אותו טוקן ושלוחה - נכנסים אליה במקום ליצור כפילות
+  const existing = getSystems().find(s => s.token === payload.token && (s.ext || '1') === (payload.ext || '1'));
+  if(existing){
+    setActiveSystemId(existing.id);
+    enterSystem(existing.id);
+    return true;
+  }
+
+  const systems = getSystems();
+  const sys = {
+    id: genSystemId(),
+    label: payload.label || '',
+    token: payload.token,
+    ext: payload.ext || '1',
+    tzintukList: payload.tzintukList || '',
+    tzintukCallerId: payload.tzintukCallerId || '',
+    contactsApi: payload.contactsApi || ''
+  };
+  systems.push(sys);
+  saveSystems(systems);
+  setActiveSystemId(sys.id);
+  enterSystem(sys.id);
+  return true;
+}
 
 document.getElementById('settingsBtn').onclick = openSettings;
 document.getElementById('closeSettingsBtn').onclick = closeSettings;
@@ -2661,14 +2783,16 @@ async function uploadRecording(blob){
   }
 }
 
-migrateLegacySystemIfNeeded();
-const bootSystems = getSystems();
-if(bootSystems.length === 0){
-  openSettings();
-} else if(bootSystems.length === 1){
-  enterSystem(bootSystems[0].id);
-} else {
-  showHome();
+if(!applyInviteLinkIfPresent()){
+  migrateLegacySystemIfNeeded();
+  const bootSystems = getSystems();
+  if(bootSystems.length === 0){
+    openSettings();
+  } else if(bootSystems.length === 1){
+    enterSystem(bootSystems[0].id);
+  } else {
+    showHome();
+  }
 }
 </script>
 </body>
