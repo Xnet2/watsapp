@@ -369,6 +369,9 @@
     padding:10px 12px;font-size:.74rem;color:#8A6100;margin-top:16px;line-height:1.55;
   }
   .ov-box .warn svg{width:15px;height:15px;flex-shrink:0;margin-top:2px;color:#B8860B;}
+  .ov-box input[type="text"][readonly].masked-field{
+    background:#EDEEF0;color:var(--text-faint);cursor:not-allowed;letter-spacing:2px;
+  }
   .ov-box .btnrow{display:flex;gap:10px;margin-top:20px;}
   .ov-box .btnrow button{
     flex:1;padding:11px;border-radius:8px;border:none;font-size:.9rem;font-weight:600;cursor:pointer;font-family:inherit;
@@ -588,6 +591,10 @@
         <span>לא בטוחים מה למלא? נעבור יחד שלב אחר שלב</span>
       </span>
     </button>
+    <div class="warn" id="invitedNotice" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15v2M12 7v4M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18z"/></svg>
+      <span>הצטרפת לקבוצה הזו דרך קישור הזמנה. פרטי החיבור (טוקן, אנשי קשר, צינתוק) מוסתרים ולא ניתנים לצפייה או לעריכה במכשיר הזה - אפשר לשנות רק את שם התצוגה, או להסיר את הקבוצה מהמכשיר (בכפתור "מחיקת מערכת זו" למטה).</span>
+    </div>
     <label for="labelInput">שם תצוגה למערכת (אופציונלי)</label>
     <input type="text" id="labelInput" placeholder="לדוגמה: הבית, העסק" dir="auto">
 
@@ -944,6 +951,8 @@ const tokenInput = document.getElementById('tokenInput');
 const extInput = document.getElementById('extInput');
 const tzintukListInput = document.getElementById('tzintukListInput');
 const contactsApiInput = document.getElementById('contactsApiInput');
+const invitedNotice = document.getElementById('invitedNotice');
+const addAnotherSystemBtn = document.getElementById('addAnotherSystemBtn');
 
 let activeAudio = null;
 let activePlayBtn = null;
@@ -975,7 +984,8 @@ function buildSettingsSystemRow(sys, activeId){
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
     '</button>';
   row.querySelector('b').textContent = systemLabel(sys);
-  row.querySelector('.settings-sys-info span').textContent = 'שלוחה ' + (sys.ext || '1');
+  row.querySelector('.settings-sys-info span').textContent =
+    'שלוחה ' + (sys.invited ? '••' : (sys.ext || '1')) + (sys.invited ? ' · הצטרפות בקישור' : '');
   row.onclick = () => { setActiveSystemId(sys.id); openSettings(); };
   row.querySelector('.settings-sys-del').onclick = (e) => {
     e.stopPropagation();
@@ -997,16 +1007,35 @@ function renderSettingsSystemsList(){
   systems.forEach(sys => settingsSystemsList.appendChild(buildSettingsSystemRow(sys, activeId)));
 }
 
+function maskDisplay(){ return '••••••••••••'; }
+
 function openSettings(){
   const sys = getActiveSystem();
+  const invited = !!(sys && sys.invited);
+
   labelInput.value = (sys && sys.label) || '';
-  tokenInput.value = getToken();
-  extInput.value = getExt();
-  tzintukListInput.value = getTzintukList();
-  contactsApiInput.value = getContactsApiUrl();
+
+  [tokenInput, extInput, tzintukListInput, contactsApiInput].forEach(inp => {
+    inp.readOnly = invited;
+    inp.classList.toggle('masked-field', invited);
+  });
+
+  if(invited){
+    tokenInput.value = maskDisplay();
+    extInput.value = maskDisplay();
+    tzintukListInput.value = sys.tzintukList ? maskDisplay() : '';
+    contactsApiInput.value = sys.contactsApi ? maskDisplay() : '';
+  } else {
+    tokenInput.value = getToken();
+    extInput.value = getExt();
+    tzintukListInput.value = getTzintukList();
+    contactsApiInput.value = getContactsApiUrl();
+  }
+
+  invitedNotice.style.display = invited ? 'flex' : 'none';
+  inviteLinkBtn.style.display = (sys && !invited) ? 'flex' : 'none';
   deleteSystemBtn.style.display = sys ? 'inline-block' : 'none';
-  inviteLinkBtn.style.display = sys ? 'flex' : 'none';
-  settingsTitle.textContent = sys ? 'עריכת מערכת' : 'חיבור מערכת חדשה';
+  settingsTitle.textContent = sys ? (invited ? 'הקבוצה שלי' : 'עריכת מערכת') : 'חיבור מערכת חדשה';
   renderSettingsSystemsList();
   settingsOverlay.classList.add('open');
 }
@@ -1080,7 +1109,8 @@ function applyInviteLinkIfPresent(){
     ext: payload.ext || '1',
     tzintukList: payload.tzintukList || '',
     tzintukCallerId: payload.tzintukCallerId || '',
-    contactsApi: payload.contactsApi || ''
+    contactsApi: payload.contactsApi || '',
+    invited: true
   };
   systems.push(sys);
   saveSystems(systems);
@@ -1094,6 +1124,15 @@ document.getElementById('closeSettingsBtn').onclick = closeSettings;
 document.getElementById('refreshBtn').onclick = loadRecordings;
 
 document.getElementById('saveSettingsBtn').onclick = () => {
+  const sys = getActiveSystem();
+  if(sys && sys.invited){
+    // מערכת שהצטרפו אליה דרך קישור הזמנה: השדות הרגישים נעולים ומוצגים ממוסכים (ר' openSettings),
+    // כך שאין להם ערך אמיתי לשמור כאן - מרשים לשנות רק את שם התצוגה המקומי.
+    upsertActiveSystem({ label: labelInput.value.trim() });
+    closeSettings();
+    fetchContactsFromServer().then(loadRecordings);
+    return;
+  }
   const t = tokenInput.value.trim();
   const e = extInput.value.trim() || '1';
   if(!t){ alert('נא להזין טוקן'); return; }
