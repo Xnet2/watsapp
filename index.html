@@ -362,6 +362,12 @@
     font-family:inherit;background:#FAFAFB;
   }
   .ov-box input[type="text"]:focus{border-color:var(--accent);background:#fff;}
+  .ov-box select{
+    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:.92rem;
+    font-family:inherit;background:#FAFAFB;color:var(--text);
+  }
+  .ov-box select:focus{border-color:var(--accent);background:#fff;}
+  .ov-box select:disabled{background:#EDEEF0;color:var(--text-faint);cursor:not-allowed;}
   .ov-box .hint{font-size:.73rem;color:var(--text-faint);margin-top:5px;line-height:1.5;}
   .ov-box .warn{
     display:flex;gap:8px;
@@ -607,6 +613,11 @@
     <label for="tzintukListInput">שם רשימת צינתוקים</label>
     <input type="text" id="tzintukListInput" placeholder="אופציונלי" dir="ltr">
 
+    <label for="contactsSourceInput">מקור אנשי קשר</label>
+    <select id="contactsSourceInput">
+      <option value="sheetdb">שירות חיצוני - SheetDB</option>
+      <option value="appsscript">סקריפט Google Sheets עצמאי (Apps Script)</option>
+    </select>
     <label for="contactsApiInput">כתובת API לאנשי קשר</label>
     <input type="text" id="contactsApiInput" placeholder="https://sheetdb.io/api/v1/xxxxxxxxxx" dir="ltr">
 
@@ -664,18 +675,38 @@
 
     <div class="wizard-step" data-step="3">
       <h3>שלב 3 - אנשי קשר (אופציונלי)</h3>
-      <p class="wizard-text">אם תרצו ששמות ותמונות של אנשי קשר יוצגו אוטומטית ליד הקלטות שהתקבלו מהם, צריך לחבר גיליון Google Sheets פרטי דרך שירות בשם SheetDB. זה שלב אופציונלי לגמרי - אפשר לדלג ולהוסיף מאוחר יותר דרך ההגדרות.</p>
-      <ol class="wizard-steplist">
-        <li>נכנסים ל-SheetDB ונרשמים (יש תוכנית חינמית).</li>
-        <li>מחברים גיליון Google Sheets חדש או קיים, כשבשורה הראשונה שלו כותרות העמודות: <bdi dir="ltr">SystemKey, ContactId, Name, Phone, PhotoUrl, UpdatedAt</bdi>.</li>
-        <li>SheetDB ייתן כתובת API (Base URL) - מעתיקים אותה.</li>
-        <li>מדביקים את הכתובת בשדה שלמטה.</li>
-      </ol>
-      <a class="wizard-link" href="https://sheetdb.io" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        פתיחת sheetdb.io
-      </a>
-      <label for="wizContactsApiInput">כתובת API לאנשי קשר (SheetDB)</label>
+      <p class="wizard-text">אם תרצו ששמות ותמונות של אנשי קשר יוצגו אוטומטית ליד הקלטות שהתקבלו מהם, צריך לחבר גיליון Google Sheets. אפשר לבחור בין שירות חיצוני מוכן (SheetDB) לבין סקריפט Google עצמאי שרץ על הגיליון שלכם ישירות. זה שלב אופציונלי לגמרי - אפשר לדלג ולהוסיף מאוחר יותר דרך ההגדרות.</p>
+
+      <label for="wizContactsSourceInput">איך תרצו לחבר את אנשי הקשר?</label>
+      <select id="wizContactsSourceInput">
+        <option value="sheetdb">שירות חיצוני - SheetDB</option>
+        <option value="appsscript">סקריפט Google Sheets עצמאי (Apps Script)</option>
+      </select>
+
+      <div id="wizContactsSheetdbHelp">
+        <ol class="wizard-steplist">
+          <li>נכנסים ל-SheetDB ונרשמים (יש תוכנית חינמית).</li>
+          <li>מחברים גיליון Google Sheets חדש או קיים, כשבשורה הראשונה שלו כותרות העמודות: <bdi dir="ltr">SystemKey, ContactId, Name, Phone, PhotoUrl, UpdatedAt</bdi>.</li>
+          <li>SheetDB ייתן כתובת API (Base URL) - מעתיקים אותה.</li>
+          <li>מדביקים את הכתובת בשדה שלמטה.</li>
+        </ol>
+        <a class="wizard-link" href="https://sheetdb.io" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          פתיחת sheetdb.io
+        </a>
+      </div>
+
+      <div id="wizContactsAppsscriptHelp" style="display:none;">
+        <ol class="wizard-steplist">
+          <li>פותחים גיליון Google Sheets חדש (או קיים), ובשורה הראשונה שלו כותרות העמודות: <bdi dir="ltr">SystemKey, ContactId, Name, Phone, PhotoUrl, UpdatedAt</bdi>.</li>
+          <li>בתוך הגיליון: תפריט <bdi dir="ltr">Extensions ← Apps Script</bdi>.</li>
+          <li>מוחקים את הקוד הקיים ומדביקים במקומו את קובץ הסקריפט <bdi dir="ltr">contacts-appsscript.gs</bdi> שסופק, ושומרים.</li>
+          <li><bdi dir="ltr">Deploy ← New deployment</bdi>, סוג <bdi dir="ltr">Web app</bdi>. תחת Execute as בוחרים "Me", ותחת Who has access בוחרים "Anyone".</li>
+          <li>מעתיקים את כתובת ה-Web app שמתקבלת (מסתיימת ב-<bdi dir="ltr">/exec</bdi>) ומדביקים אותה בשדה שלמטה.</li>
+        </ol>
+      </div>
+
+      <label for="wizContactsApiInput">כתובת ה-API</label>
       <input type="text" id="wizContactsApiInput" placeholder="https://sheetdb.io/api/v1/xxxxxxxxxx" dir="ltr">
     </div>
 
@@ -910,7 +941,8 @@ function migrateLegacySystemIfNeeded(){
     ext: localStorage.getItem(LEGACY_LS_EXT) || '1',
     tzintukList: localStorage.getItem(LEGACY_LS_TZINTUK_LIST) || '',
     tzintukCallerId: localStorage.getItem(LEGACY_LS_TZINTUK_CALLERID) || '',
-    contactsApi: localStorage.getItem(LEGACY_LS_CONTACTS_API) || ''
+    contactsApi: localStorage.getItem(LEGACY_LS_CONTACTS_API) || '',
+    contactsSource: 'sheetdb'
   };
   saveSystems([sys]);
   setActiveSystemId(sys.id);
@@ -921,6 +953,7 @@ function migrateLegacySystemIfNeeded(){
 // כך שכשהאתר מתפרסם ומופעל ע"י אנשים שונים (או ע"י אותו אדם עם כמה מערכות), כל מערכת
 // מפנה לגיליון הפרטי שלה ולא לגיליון משותף שבו אנשים אחרים היו יכולים לראות/לערוך.
 function getContactsApiUrl(){ const s = getActiveSystem(); return ((s && s.contactsApi) || '').trim(); }
+function getContactsSource(){ const s = getActiveSystem(); return (s && s.contactsSource) || 'sheetdb'; }
 
 // ===== העלאת תמונות - Cloudinary =====
 const CLOUDINARY_CLOUD_NAME = 'rpbok3l7';
@@ -951,6 +984,7 @@ const tokenInput = document.getElementById('tokenInput');
 const extInput = document.getElementById('extInput');
 const tzintukListInput = document.getElementById('tzintukListInput');
 const contactsApiInput = document.getElementById('contactsApiInput');
+const contactsSourceInput = document.getElementById('contactsSourceInput');
 const invitedNotice = document.getElementById('invitedNotice');
 const addAnotherSystemBtn = document.getElementById('addAnotherSystemBtn');
 
@@ -1019,17 +1053,20 @@ function openSettings(){
     inp.readOnly = invited;
     inp.classList.toggle('masked-field', invited);
   });
+  contactsSourceInput.disabled = invited;
 
   if(invited){
     tokenInput.value = maskDisplay();
     extInput.value = maskDisplay();
     tzintukListInput.value = sys.tzintukList ? maskDisplay() : '';
     contactsApiInput.value = sys.contactsApi ? maskDisplay() : '';
+    contactsSourceInput.value = sys.contactsSource || 'sheetdb';
   } else {
     tokenInput.value = getToken();
     extInput.value = getExt();
     tzintukListInput.value = getTzintukList();
     contactsApiInput.value = getContactsApiUrl();
+    contactsSourceInput.value = getContactsSource();
   }
 
   invitedNotice.style.display = invited ? 'flex' : 'none';
@@ -1058,7 +1095,8 @@ inviteLinkBtn.onclick = async () => {
     ext: sys.ext || '1',
     tzintukList: sys.tzintukList || '',
     tzintukCallerId: sys.tzintukCallerId || '',
-    contactsApi: sys.contactsApi || ''
+    contactsApi: sys.contactsApi || '',
+    contactsSource: sys.contactsSource || 'sheetdb'
   };
   const encoded = b64UrlEncode(JSON.stringify(payload));
   const link = location.origin + location.pathname + '?' + INVITE_PARAM + '=' + encoded;
@@ -1110,6 +1148,7 @@ function applyInviteLinkIfPresent(){
     tzintukList: payload.tzintukList || '',
     tzintukCallerId: payload.tzintukCallerId || '',
     contactsApi: payload.contactsApi || '',
+    contactsSource: payload.contactsSource || 'sheetdb',
     invited: true
   };
   systems.push(sys);
@@ -1141,7 +1180,8 @@ document.getElementById('saveSettingsBtn').onclick = () => {
     ext: e,
     label: labelInput.value.trim(),
     tzintukList: tzintukListInput.value.trim(),
-    contactsApi: contactsApiInput.value.trim()
+    contactsApi: contactsApiInput.value.trim(),
+    contactsSource: contactsSourceInput.value
   });
   closeSettings();
   fetchContactsFromServer().then(loadRecordings);
@@ -1186,6 +1226,9 @@ const wizTokenInput = document.getElementById('wizTokenInput');
 const wizLabelInput = document.getElementById('wizLabelInput');
 const wizExtInput = document.getElementById('wizExtInput');
 const wizContactsApiInput = document.getElementById('wizContactsApiInput');
+const wizContactsSourceInput = document.getElementById('wizContactsSourceInput');
+const wizContactsSheetdbHelp = document.getElementById('wizContactsSheetdbHelp');
+const wizContactsAppsscriptHelp = document.getElementById('wizContactsAppsscriptHelp');
 const wizTzintukListInput = document.getElementById('wizTzintukListInput');
 const wizTzintukCallerIdInput = document.getElementById('wizTzintukCallerIdInput');
 let wizardStepIndex = 0;
@@ -1195,6 +1238,8 @@ function openWizard(){
   wizLabelInput.value = (getActiveSystem() && getActiveSystem().label) || '';
   wizExtInput.value = getExt() || '1';
   wizContactsApiInput.value = getContactsApiUrl();
+  wizContactsSourceInput.value = getContactsSource();
+  updateWizContactsHelp();
   wizTzintukListInput.value = getTzintukList();
   wizTzintukCallerIdInput.value = getTzintukCallerId();
   wizardStepIndex = 0;
@@ -1202,6 +1247,15 @@ function openWizard(){
   closeSettings();
   wizardOverlay.classList.add('open');
 }
+function updateWizContactsHelp(){
+  const isAppsScript = wizContactsSourceInput.value === 'appsscript';
+  wizContactsSheetdbHelp.style.display = isAppsScript ? 'none' : '';
+  wizContactsAppsscriptHelp.style.display = isAppsScript ? '' : 'none';
+  wizContactsApiInput.placeholder = isAppsScript
+    ? 'https://script.google.com/macros/s/xxxxxxxxxx/exec'
+    : 'https://sheetdb.io/api/v1/xxxxxxxxxx';
+}
+wizContactsSourceInput.onchange = updateWizContactsHelp;
 function exitWizard(){
   wizardOverlay.classList.remove('open');
 }
@@ -1217,6 +1271,7 @@ function renderWizardSummary(){
     ['שם תצוגה', wizLabelInput.value.trim() || 'לא הוגדר (יוצג לפי מספר השלוחה)'],
     ['טוקן', wizTokenInput.value.trim() || '—'],
     ['מספר שלוחה', wizExtInput.value.trim() || '1'],
+    ['מקור אנשי קשר', wizContactsSourceInput.value === 'appsscript' ? 'סקריפט Google Sheets' : 'SheetDB'],
     ['כתובת API לאנשי קשר', wizContactsApiInput.value.trim() || 'לא הוגדר'],
     ['רשימת צינתוקים', wizTzintukListInput.value.trim() || 'לא הוגדר'],
     ['זיהוי מתקשר לצינתוק', wizTzintukCallerIdInput.value.trim() || 'לא הוגדר']
@@ -1239,7 +1294,8 @@ function finishWizard(){
     ext: wizExtInput.value.trim() || '1',
     tzintukList: wizTzintukListInput.value.trim(),
     tzintukCallerId: wizTzintukCallerIdInput.value.trim(),
-    contactsApi: wizContactsApiInput.value.trim()
+    contactsApi: wizContactsApiInput.value.trim(),
+    contactsSource: wizContactsSourceInput.value
   });
   exitWizard();
   enterSystem(sys.id);
@@ -1382,7 +1438,10 @@ async function loadSystemRowPreview(sys, row){
       (async () => {
         if(!sys.contactsApi) return [];
         try{
-          const res = await fetch(sys.contactsApi + '/search?SystemKey=' + encodeURIComponent(sys.token));
+          const url = sys.contactsSource === 'appsscript'
+            ? sys.contactsApi + (sys.contactsApi.includes('?') ? '&' : '?') + 'action=search&SystemKey=' + encodeURIComponent(sys.token)
+            : sys.contactsApi + '/search?SystemKey=' + encodeURIComponent(sys.token);
+          const res = await fetch(url);
           const rows = await res.json();
           return (Array.isArray(rows) ? rows : [])
             .filter(r => !String(r.ContactId||'').startsWith('rec:'))
@@ -1487,14 +1546,18 @@ let recAttributionCache = [];
 
 function getContacts(){ return contactsCache; }
 
-// טוען מחדש את אנשי הקשר של הטוקן הנוכחי מהגיליון (דרך SheetDB).
-// עמודות בגיליון: SystemKey | ContactId | Name | Phone | PhotoUrl | UpdatedAt
+// טוען מחדש את אנשי הקשר של הטוקן הנוכחי מהגיליון (דרך SheetDB או סקריפט Apps Script -
+// לפי מה שהוגדר להרצה הזו ב-getContactsSource()).
+// עמודות בגיליון (שתי השיטות): SystemKey | ContactId | Name | Phone | PhotoUrl | UpdatedAt
 async function fetchContactsFromServer(){
   const token = getToken();
   const apiUrl = getContactsApiUrl();
+  const source = getContactsSource();
   if(!token || !apiUrl){ contactsCache = []; recAttributionCache = []; return contactsCache; }
   try{
-    const url = apiUrl + '/search?SystemKey=' + encodeURIComponent(token);
+    const url = source === 'appsscript'
+      ? apiUrl + (apiUrl.includes('?') ? '&' : '?') + 'action=search&SystemKey=' + encodeURIComponent(token)
+      : apiUrl + '/search?SystemKey=' + encodeURIComponent(token);
     const res = await fetch(url);
     const rows = await res.json();
     const all = Array.isArray(rows) ? rows : [];
@@ -1522,6 +1585,7 @@ async function saveRecordingAttribution(fileName){
   if(!me || !me.phone) return; // בלי איש קשר "אני" עם מספר טלפון, אין מה לשמור
   const apiUrl = getContactsApiUrl();
   if(!apiUrl) return; // בלי כתובת API מוגדרת, אין לאן לשמור את השיוך
+  const source = getContactsSource();
   const token = getToken();
   const row = {
     SystemKey: token,
@@ -1532,11 +1596,17 @@ async function saveRecordingAttribution(fileName){
     UpdatedAt: new Date().toISOString()
   };
   try{
-    const res = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: [row] })
-    });
+    const res = source === 'appsscript'
+      ? await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'upsert', row })
+        })
+      : await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: [row] })
+        });
     if(res.ok){
       recAttributionCache = recAttributionCache.filter(r => r.file !== fileName);
       recAttributionCache.push({ file: fileName, name: me.name, phone: me.phone, photo: me.photo || '' });
@@ -1551,6 +1621,7 @@ async function saveRecordingAttribution(fileName){
 async function saveContactToServer(contact){
   const apiUrl = getContactsApiUrl();
   if(!apiUrl) throw new Error('לא הוגדרה כתובת API לאנשי קשר בהגדרות');
+  const source = getContactsSource();
   const token = getToken();
   const row = {
     SystemKey: token,
@@ -1560,20 +1631,30 @@ async function saveContactToServer(contact){
     PhotoUrl: contact.photo || '',
     UpdatedAt: new Date().toISOString()
   };
-  const exists = contactsCache.some(c => c.id === contact.id);
   let res;
-  if(exists){
-    res = await fetch(apiUrl + '/ContactId/' + encodeURIComponent(contact.id), {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: row })
-    });
-  } else {
+  if(source === 'appsscript'){
+    // גוף הבקשה נשלח כ-text/plain (ולא application/json) כדי להימנע מבקשת preflight מסוג
+    // OPTIONS, ש-Apps Script Web App לא יודע לענות עליה - הסקריפט עצמו עדיין מפענח JSON תקין.
     res = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ data: [row] })
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'upsert', row })
     });
+  } else {
+    const exists = contactsCache.some(c => c.id === contact.id);
+    if(exists){
+      res = await fetch(apiUrl + '/ContactId/' + encodeURIComponent(contact.id), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: row })
+      });
+    } else {
+      res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: [row] })
+      });
+    }
   }
   if(!res.ok) throw new Error('שמירה נכשלה (' + res.status + ')');
   const idx = contactsCache.findIndex(c => c.id === contact.id);
@@ -1584,9 +1665,16 @@ async function saveContactToServer(contact){
 async function deleteContactFromServer(id){
   const apiUrl = getContactsApiUrl();
   if(!apiUrl) throw new Error('לא הוגדרה כתובת API לאנשי קשר בהגדרות');
-  const res = await fetch(apiUrl + '/ContactId/' + encodeURIComponent(id), {
-    method: 'DELETE'
-  });
+  const source = getContactsSource();
+  const res = source === 'appsscript'
+    ? await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'delete', row: { SystemKey: getToken(), ContactId: id } })
+      })
+    : await fetch(apiUrl + '/ContactId/' + encodeURIComponent(id), {
+        method: 'DELETE'
+      });
   if(!res.ok) throw new Error('מחיקה נכשלה (' + res.status + ')');
   contactsCache = contactsCache.filter(c => c.id !== id);
 }
