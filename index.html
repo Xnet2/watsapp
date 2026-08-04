@@ -377,6 +377,24 @@
     display:none;align-items:center;justify-content:center;z-index:50;
     padding:16px;
   }
+
+  /* כפתור "צריכים עזרה" צף בצד שמאל של הדף (חוץ מ-#app, כדי שיישאר מוצמד לחלון ולא
+     למרכז המצומצם של תיבת האפליקציה) - פותח את מסך ההדרכות. */
+  #helpFab{
+    position:fixed;
+    left:18px;
+    bottom:22px;
+    z-index:30;
+    display:flex;align-items:center;gap:7px;
+    background:var(--accent);color:#fff;border:none;
+    padding:11px 16px;border-radius:999px;
+    font-family:inherit;font-size:.85rem;font-weight:600;cursor:pointer;
+    box-shadow:0 4px 14px rgba(0,0,0,.22);
+    transition:background .15s, transform .1s;
+  }
+  #helpFab:hover{background:var(--accent-dark);}
+  #helpFab:active{transform:scale(.96);}
+  #helpFab svg{width:17px;height:17px;flex-shrink:0;}
   .ov.open{display:flex;}
   .ov-box{
     background:#fff;border-radius:16px;padding:24px;width:100%;max-width:420px;
@@ -463,22 +481,68 @@
   .wizard-entry-text b{font-size:.86rem;color:var(--text);}
   .wizard-entry-text span{font-size:.74rem;color:var(--text-dim);}
 
-  .wizard-progress{font-size:.72rem;color:var(--text-faint);font-weight:600;margin-bottom:12px;}
-  .wizard-step{display:none;}
-  .wizard-step.active{display:block;}
-  .wizard-step h3{margin:0 0 8px;font-size:1.02rem;font-weight:700;}
+  .guide-category{margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+  .guide-category:last-of-type{border-bottom:none;margin-bottom:8px;padding-bottom:0;}
+  .guide-category h3{margin:0 0 8px;font-size:1.02rem;font-weight:700;}
   .wizard-text{font-size:.85rem;color:var(--text-dim);line-height:1.65;margin:0 0 10px;}
   .wizard-steplist{margin:0 0 12px;padding-inline-start:20px;font-size:.83rem;color:var(--text-dim);line-height:1.75;}
-  .wizard-step label{display:block;font-size:.8rem;font-weight:600;margin:14px 0 5px;}
   .wizard-link{
     display:inline-flex;align-items:center;gap:6px;
     color:var(--accent);font-weight:600;font-size:.82rem;text-decoration:none;margin-bottom:14px;
   }
   .wizard-link:hover{text-decoration:underline;}
   .wizard-link svg{width:14px;height:14px;flex-shrink:0;}
-  .wizard-summary{background:var(--bg);border-radius:8px;padding:12px 14px;font-size:.8rem;line-height:1.9;color:var(--text-dim);}
-  .wizard-summary b{color:var(--text);}
-  .wizard-exit{display:block;margin:14px auto 0;}
+
+  /* ===== מסך "הדרכות" - חלון גדול עם ניווט קטגוריות/שלבים בצד ותוכן מתחלף ===== */
+  .guides-box{
+    max-width:760px;width:100%;height:min(640px,88vh);
+    display:flex;flex-direction:column;padding:0;overflow:hidden;
+  }
+  .guides-header{display:flex;align-items:center;justify-content:space-between;padding:22px 24px 0;}
+  .guides-header h2{margin:0;}
+  .guides-close-x{
+    background:none;border:none;color:var(--text-faint);cursor:pointer;
+    padding:6px;border-radius:50%;display:flex;flex-shrink:0;
+  }
+  .guides-close-x:hover{background:var(--bg);color:var(--text);}
+  .guides-close-x svg{width:19px;height:19px;}
+  .guides-body{flex:1;min-height:0;display:flex;gap:20px;padding:16px 24px 22px;}
+  .guides-nav{
+    flex-shrink:0;width:196px;display:flex;flex-direction:column;gap:3px;
+    border-left:1px solid var(--border);padding-left:16px;overflow-y:auto;
+  }
+  .guides-nav-item{
+    display:flex;align-items:center;gap:10px;width:100%;
+    background:none;border:none;text-align:right;cursor:pointer;
+    padding:10px 9px;border-radius:9px;font-family:inherit;
+    font-size:.83rem;color:var(--text-dim);font-weight:600;transition:background .12s;
+  }
+  .guides-nav-item:hover{background:var(--bg);}
+  .guides-nav-item.active{background:#F0FBF8;color:var(--text);}
+  .guides-nav-num{
+    width:23px;height:23px;border-radius:50%;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--border);color:var(--text-dim);font-size:.73rem;font-weight:700;transition:background .12s,color .12s;
+  }
+  .guides-nav-item.active .guides-nav-num{background:var(--accent);color:#fff;}
+  .guides-content{flex:1;min-width:0;overflow-y:auto;}
+  .guide-panel{display:none;}
+  .guide-panel.active{display:block;}
+  .guide-panel h3{margin:0 0 10px;font-size:1.05rem;font-weight:700;display:flex;align-items:center;gap:9px;}
+  .guide-req{
+    font-size:.68rem;font-weight:700;color:var(--accent-dark);background:#E4F7F1;
+    padding:2px 8px;border-radius:20px;
+  }
+  .guide-req.optional{color:var(--text-dim);background:var(--bg);}
+  @media (max-width:600px){
+    .guides-box{height:92vh;}
+    .guides-body{flex-direction:column;padding:12px 16px 16px;gap:10px;}
+    .guides-nav{
+      width:100%;flex-direction:row;overflow-x:auto;overflow-y:visible;
+      border-left:none;border-bottom:1px solid var(--border);padding-left:0;padding-bottom:10px;
+    }
+    .guides-nav-item{flex-shrink:0;white-space:nowrap;}
+  }
 
   .preview-player{display:flex;align-items:center;gap:12px;margin-top:6px;}
   .preview-player .play-btn{flex-shrink:0;}
@@ -551,6 +615,11 @@
 </head>
 <body>
 
+<button type="button" id="helpFab">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  <span>צריכים עזרה?</span>
+</button>
+
 <div id="app">
   <header>
     <div class="title">
@@ -616,15 +685,6 @@
       <div id="settingsSystemsList"></div>
     </div>
 
-    <button type="button" class="wizard-entry-btn" id="openWizardBtn">
-      <span class="wizard-entry-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      </span>
-      <span class="wizard-entry-text">
-        <b>מדריך למתחיל</b>
-        <span>לא בטוחים מה למלא? נעבור יחד שלב אחר שלב</span>
-      </span>
-    </button>
     <div class="warn" id="invitedNotice" style="display:none;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15v2M12 7v4M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18z"/></svg>
       <span>הצטרפת לקבוצה הזו דרך קישור הזמנה. פרטי החיבור (טוקן, אנשי קשר, צינתוק) מוסתרים ולא ניתנים לצפייה או לעריכה במכשיר הזה - אפשר לשנות רק את שם התצוגה, או להסיר את הקבוצה מהמכשיר (בכפתור "מחיקת מערכת זו" למטה).</span>
@@ -674,95 +734,93 @@
 
 <div id="toastEl" class="toast"></div>
 
-<div id="wizardOverlay" class="ov">
-  <div class="ov-box">
-    <div class="wizard-progress" id="wizardProgress">שלב 1 מתוך 6</div>
-
-    <div class="wizard-step active" data-step="0">
-      <h3>ברוכים הבאים!</h3>
-      <p class="wizard-text">המדריך הקצר הזה יעזור לכם לחבר את האתר בפעם הראשונה, שלב אחר שלב. נעבור יחד על פרטי ההתחברות לימות המשיח, ובאופן אופציונלי גם על חיבור אנשי קשר וצינתוקים. אפשר לצאת מהמדריך בכל שלב ולהמשיך למלא הכל ידנית במסך ההגדרות הרגיל.</p>
+<div id="guidesOverlay" class="ov">
+  <div class="ov-box guides-box">
+    <div class="guides-header">
+      <h2>הדרכות</h2>
+      <button type="button" class="guides-close-x" id="closeGuidesBtn" aria-label="סגירה">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </div>
+    <div class="sub" style="padding:0 24px;">כל הקישורים וההסברים הדרושים כדי למלא כל שדה במסך ההגדרות, מחולקים לפי קטגוריה.</div>
 
-    <div class="wizard-step" data-step="1" data-require="token">
-      <h3>שלב 1 - טוקן ההתחברות</h3>
-      <p class="wizard-text">כדי שהאתר יוכל לדבר עם ימות המשיח צריך "טוקן": מספר המערכת שלכם, ואחריו נקודתיים וסיסמה, למשל <bdi dir="ltr">0771234567:1234</bdi>.</p>
-      <p class="wizard-text">מספר המערכת הוא מספר הטלפון שדרכו נכנסים לניהול ימות המשיח, והסיסמה היא סיסמת הניהול שלכם (או סיסמה ייעודית שהגדרתם).</p>
-      <a class="wizard-link" href="https://www.call2all.co.il" target="_blank" rel="noopener">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        פתיחת ממשק הניהול של ימות המשיח
-      </a>
-      <label for="wizTokenInput">טוקן (מספר מערכת:סיסמה)</label>
-      <input type="text" id="wizTokenInput" placeholder="0771234567:1234" dir="ltr">
-      <label for="wizLabelInput">שם תצוגה למערכת (אופציונלי)</label>
-      <input type="text" id="wizLabelInput" placeholder="לדוגמה: הבית, העסק" dir="auto">
-    </div>
-
-    <div class="wizard-step" data-step="2">
-      <h3>שלב 2 - מספר שלוחה</h3>
-      <p class="wizard-text">זהו מספר השלוחה שממנה יישלפו ההקלטות שתרצו להציג באתר (הנתיב <bdi dir="ltr">ivr2:/&lt;שלוחה&gt;/</bdi>). אם אתם לא בטוחים מה המספר, אפשר לבדוק בממשק הניהול של ימות המשיח תחת "ניהול תפריטים". קבצים שאינם הקלטות אמיתיות (כמו קבצי מערכת) מסוננים אוטומטית ולא יוצגו.</p>
-      <label for="wizExtInput">מספר שלוחה</label>
-      <input type="text" id="wizExtInput" placeholder="1" dir="ltr" value="1">
-    </div>
-
-    <div class="wizard-step" data-step="3">
-      <h3>שלב 3 - אנשי קשר (אופציונלי)</h3>
-      <p class="wizard-text">אם תרצו ששמות ותמונות של אנשי קשר יוצגו אוטומטית ליד הקלטות שהתקבלו מהם, צריך לחבר גיליון Google Sheets. אפשר לבחור בין שירות חיצוני מוכן (SheetDB) לבין סקריפט Google עצמאי שרץ על הגיליון שלכם ישירות. זה שלב אופציונלי לגמרי - אפשר לדלג ולהוסיף מאוחר יותר דרך ההגדרות.</p>
-
-      <label for="wizContactsSourceInput">איך תרצו לחבר את אנשי הקשר?</label>
-      <select id="wizContactsSourceInput">
-        <option value="sheetdb">שירות חיצוני - SheetDB</option>
-        <option value="appsscript">סקריפט Google Sheets עצמאי (Apps Script)</option>
-      </select>
-
-      <div id="wizContactsSheetdbHelp">
-        <ol class="wizard-steplist">
-          <li>נכנסים ל-SheetDB ונרשמים (יש תוכנית חינמית).</li>
-          <li>מחברים גיליון Google Sheets חדש או קיים, כשבשורה הראשונה שלו כותרות העמודות: <bdi dir="ltr">SystemKey, ContactId, Name, Phone, PhotoUrl, UpdatedAt</bdi>.</li>
-          <li>SheetDB ייתן כתובת API (Base URL) - מעתיקים אותה.</li>
-          <li>מדביקים את הכתובת בשדה שלמטה.</li>
-        </ol>
-        <a class="wizard-link" href="https://sheetdb.io" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          פתיחת sheetdb.io
-        </a>
+    <div class="guides-body">
+      <div class="guides-nav" id="guidesNav">
+        <button type="button" class="guides-nav-item active" data-guide-panel="guidePanelConnect">
+          <span class="guides-nav-num">1</span><span>חיבור לימות המשיח</span>
+        </button>
+        <button type="button" class="guides-nav-item" data-guide-panel="guidePanelContacts">
+          <span class="guides-nav-num">2</span><span>אנשי קשר</span>
+        </button>
+        <button type="button" class="guides-nav-item" data-guide-panel="guidePanelTzintuk">
+          <span class="guides-nav-num">3</span><span>צינתוק</span>
+        </button>
+        <button type="button" class="guides-nav-item" data-guide-panel="guidePanelTranscribe">
+          <span class="guides-nav-num">4</span><span>תמלול הודעות</span>
+        </button>
       </div>
 
-      <div id="wizContactsAppsscriptHelp" style="display:none;">
-        <ol class="wizard-steplist">
-          <li>פותחים גיליון Google Sheets חדש (או קיים), ובשורה הראשונה שלו כותרות העמודות: <bdi dir="ltr">SystemKey, ContactId, Name, Phone, PhotoUrl, UpdatedAt</bdi>.</li>
-          <li>בתוך הגיליון: תפריט <bdi dir="ltr">Extensions ← Apps Script</bdi>.</li>
-          <li>מוחקים את הקוד הקיים ומדביקים במקומו את קובץ הסקריפט <bdi dir="ltr">contacts-appsscript.gs</bdi> שסופק, ושומרים.</li>
-          <li><bdi dir="ltr">Deploy ← New deployment</bdi>, סוג <bdi dir="ltr">Web app</bdi>. תחת Execute as בוחרים "Me", ותחת Who has access בוחרים "Anyone".</li>
-          <li>מעתיקים את כתובת ה-Web app שמתקבלת (מסתיימת ב-<bdi dir="ltr">/exec</bdi>) ומדביקים אותה בשדה שלמטה.</li>
-        </ol>
+      <div class="guides-content">
+        <div class="guide-panel active" id="guidePanelConnect">
+          <h3>חיבור לימות המשיח <span class="guide-req">חובה</span></h3>
+          <p class="wizard-text">כדי שהאתר יוכל לדבר עם ימות המשיח צריך "טוקן": מספר המערכת שלכם, ואחריו נקודתיים וסיסמה, למשל <bdi dir="ltr">0771234567:1234</bdi>. מספר המערכת הוא מספר הטלפון שדרכו נכנסים לניהול ימות המשיח, והסיסמה היא סיסמת הניהול שלכם (או סיסמה ייעודית שהגדרתם). את זה מזינים בשדה "מספר מערכת וסיסמה".</p>
+          <p class="wizard-text">מספר השלוחה (שדה "מספר שלוחה") הוא השלוחה שממנה יישלפו ההקלטות (הנתיב <bdi dir="ltr">ivr2:/&lt;שלוחה&gt;/</bdi>) - ניתן לבדוק אותו בממשק הניהול תחת "ניהול תפריטים".</p>
+          <a class="wizard-link" href="https://www.call2all.co.il" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            פתיחת ממשק הניהול של ימות המשיח
+          </a>
+        </div>
+
+        <div class="guide-panel" id="guidePanelContacts">
+          <h3>אנשי קשר <span class="guide-req optional">אופציונלי</span></h3>
+          <p class="wizard-text">כדי ששמות ותמונות של אנשי קשר יוצגו אוטומטית ליד הקלטות שהתקבלו מהם, מחברים גיליון Google Sheets - דרך שירות חיצוני (SheetDB) או סקריפט Google עצמאי. את הכתובת שמתקבלת מזינים בשדה "כתובת API לאנשי קשר", ובוחרים את הסוג המתאים בשדה "מקור אנשי קשר".</p>
+          <p class="wizard-text"><b>אפשרות א' - SheetDB:</b></p>
+          <ol class="wizard-steplist">
+            <li>נרשמים ל-SheetDB (יש תוכנית חינמית).</li>
+            <li>מחברים גיליון Google Sheets חדש/קיים, כשבשורה הראשונה שלו כותרות העמודות: <bdi dir="ltr">SystemKey, ContactId, Name, Phone, PhotoUrl, UpdatedAt</bdi>.</li>
+            <li>SheetDB ייתן כתובת API (Base URL) - מעתיקים ומדביקים בשדה "כתובת API לאנשי קשר".</li>
+          </ol>
+          <a class="wizard-link" href="https://sheetdb.io" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            פתיחת sheetdb.io
+          </a>
+          <p class="wizard-text"><b>אפשרות ב' - סקריפט Google Sheets עצמאי (Apps Script):</b></p>
+          <ol class="wizard-steplist">
+            <li>פותחים גיליון Google Sheets חדש/קיים, ובשורה הראשונה שלו כותרות העמודות: <bdi dir="ltr">SystemKey, ContactId, Name, Phone, PhotoUrl, UpdatedAt</bdi>.</li>
+            <li>בתוך הגיליון: תפריט <bdi dir="ltr">Extensions ← Apps Script</bdi>.</li>
+            <li>מוחקים את הקוד הקיים ומדביקים במקומו את קובץ הסקריפט <bdi dir="ltr">contacts-appsscript.gs</bdi> שסופק, ושומרים.</li>
+            <li><bdi dir="ltr">Deploy ← New deployment</bdi>, סוג <bdi dir="ltr">Web app</bdi>. תחת Execute as בוחרים "Me", ותחת Who has access בוחרים "Anyone".</li>
+            <li>מעתיקים את כתובת ה-Web app שמתקבלת (מסתיימת ב-<bdi dir="ltr">/exec</bdi>) ומדביקים בשדה "כתובת API לאנשי קשר".</li>
+          </ol>
+        </div>
+
+        <div class="guide-panel" id="guidePanelTzintuk">
+          <h3>צינתוק לרשימה <span class="guide-req optional">אופציונלי</span></h3>
+          <p class="wizard-text">אפשר להגדיר שבכל הקלטה חדשה תישלח אוטומטית שיחת צינתוק לכל המספרים ברשימת צינתוקים שהגדרתם בימות המשיח, תחת "ניהול רשימות צינתוקים במודול צינתוקים חינמיים" בממשק הניהול. את שם/מספר הרשימה מזינים בשדה "שם רשימת צינתוקים" בהגדרות.</p>
+          <a class="wizard-link" href="https://www.call2all.co.il" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            פתיחת ממשק הניהול של ימות המשיח
+          </a>
+        </div>
+
+        <div class="guide-panel" id="guidePanelTranscribe">
+          <h3>תמלול הודעות <span class="guide-req optional">אופציונלי, חינמי</span></h3>
+          <p class="wizard-text">תמלול הודעות קוליות לטקסט מתבצע דרך Groq (מודל Whisper), עם מכסה חינמית נדיבה (2,000 בקשות ביום, בלי כרטיס אשראי). את המפתח מזינים בשדה "מפתח Groq API".</p>
+          <ol class="wizard-steplist">
+            <li>נרשמים ל-Groq Console (אימייל או חשבון Google).</li>
+            <li>בתפריט הצד: <bdi dir="ltr">API Keys ← Create API Key</bdi>.</li>
+            <li>מעתיקים את המפתח (מתחיל ב-<bdi dir="ltr">gsk_</bdi>) ומדביקים בשדה "מפתח Groq API".</li>
+          </ol>
+          <a class="wizard-link" href="https://console.groq.com" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            פתיחת console.groq.com
+          </a>
+        </div>
       </div>
-
-      <label for="wizContactsApiInput">כתובת ה-API</label>
-      <input type="text" id="wizContactsApiInput" placeholder="https://sheetdb.io/api/v1/xxxxxxxxxx" dir="ltr">
     </div>
-
-    <div class="wizard-step" data-step="4">
-      <h3>שלב 4 - צינתוק לרשימה (אופציונלי)</h3>
-      <p class="wizard-text">אפשר להגדיר שבכל הקלטה חדשה תישלח אוטומטית שיחת צינתוק לכל המספרים ברשימת צינתוקים שהגדרתם בימות המשיח (תחת "ניהול רשימות צינתוקים במודול צינתוקים חינמיים"). גם זה אופציונלי - אפשר להשאיר ריק ולדלג.</p>
-      <label for="wizTzintukListInput">מספר/שם רשימת הצינתוקים</label>
-      <input type="text" id="wizTzintukListInput" placeholder="השאירו ריק לביטול" dir="ltr">
-      <label for="wizTzintukCallerIdInput">זיהוי מתקשר לצינתוק</label>
-      <input type="text" id="wizTzintukCallerIdInput" placeholder="השאירו ריק לזיהוי ברירת מחדל" dir="ltr">
-    </div>
-
-    <div class="wizard-step" data-step="5">
-      <h3>סיימתם!</h3>
-      <p class="wizard-text">אלה הפרטים שהוזנו. אפשר לשנות כל אחד מהם בכל רגע דרך כפתור ההגדרות.</p>
-      <div class="wizard-summary" id="wizardSummary"></div>
-    </div>
-
-    <div class="btnrow">
-      <button class="secondary" id="wizardBackBtn">חזרה</button>
-      <button class="primary" id="wizardNextBtn">הבא</button>
-    </div>
-    <button type="button" class="linklike wizard-exit" id="wizardExitBtn">יציאה מהמדריך</button>
   </div>
 </div>
+
 
 <div id="contactsOverlay" class="ov">
   <div class="ov-box">
@@ -1258,116 +1316,30 @@ deleteSystemBtn.onclick = () => {
   else { showHome(); }
 };
 
-// ===== מדריך למתחיל - עוזר הגדרה שלב-אחר-שלב =====
-// עובר עם המשתמש על כל הפרטים הדרושים בזה אחר זה (טוקן, שלוחה, אנשי קשר, צינתוק),
-// עם הסבר ולינקים רלוונטיים לכל שלב, ושומר את הכל בסוף באותם מפתחות localStorage
-// שמשמשים גם את מסך ההגדרות הרגיל - כך שאפשר לעבור חופשי בין השניים.
-const wizardOverlay = document.getElementById('wizardOverlay');
-const wizardStepsEls = Array.from(document.querySelectorAll('.wizard-step'));
-const wizardProgress = document.getElementById('wizardProgress');
-const wizardBackBtn = document.getElementById('wizardBackBtn');
-const wizardNextBtn = document.getElementById('wizardNextBtn');
-const wizardExitBtn = document.getElementById('wizardExitBtn');
-const wizardSummary = document.getElementById('wizardSummary');
-const wizTokenInput = document.getElementById('wizTokenInput');
-const wizLabelInput = document.getElementById('wizLabelInput');
-const wizExtInput = document.getElementById('wizExtInput');
-const wizContactsApiInput = document.getElementById('wizContactsApiInput');
-const wizContactsSourceInput = document.getElementById('wizContactsSourceInput');
-const wizContactsSheetdbHelp = document.getElementById('wizContactsSheetdbHelp');
-const wizContactsAppsscriptHelp = document.getElementById('wizContactsAppsscriptHelp');
-const wizTzintukListInput = document.getElementById('wizTzintukListInput');
-const wizTzintukCallerIdInput = document.getElementById('wizTzintukCallerIdInput');
-let wizardStepIndex = 0;
+// ===== הדרכות - מסך מידע סטטי (לא אינטראקטיבי) עם קישורים והסברים לכל שדה, לפי קטגוריה =====
+const guidesOverlay = document.getElementById('guidesOverlay');
+const guidesNav = document.getElementById('guidesNav');
+const guidesNavItems = Array.from(guidesNav.querySelectorAll('.guides-nav-item'));
+const guidePanels = Array.from(document.querySelectorAll('.guide-panel'));
 
-function openWizard(){
-  wizTokenInput.value = getToken();
-  wizLabelInput.value = (getActiveSystem() && getActiveSystem().label) || '';
-  wizExtInput.value = getExt() || '1';
-  wizContactsApiInput.value = getContactsApiUrl();
-  wizContactsSourceInput.value = getContactsSource();
-  updateWizContactsHelp();
-  wizTzintukListInput.value = getTzintukList();
-  wizTzintukCallerIdInput.value = getTzintukCallerId();
-  wizardStepIndex = 0;
-  showWizardStep(0);
+function showGuidePanel(panelId){
+  guidePanels.forEach(el => el.classList.toggle('active', el.id === panelId));
+  guidesNavItems.forEach(btn => btn.classList.toggle('active', btn.dataset.guidePanel === panelId));
+}
+guidesNavItems.forEach(btn => {
+  btn.onclick = () => showGuidePanel(btn.dataset.guidePanel);
+});
+
+function openGuides(){
   closeSettings();
-  wizardOverlay.classList.add('open');
+  showGuidePanel(guidesNavItems[0].dataset.guidePanel);
+  guidesOverlay.classList.add('open');
 }
-function updateWizContactsHelp(){
-  const isAppsScript = wizContactsSourceInput.value === 'appsscript';
-  wizContactsSheetdbHelp.style.display = isAppsScript ? 'none' : '';
-  wizContactsAppsscriptHelp.style.display = isAppsScript ? '' : 'none';
-  wizContactsApiInput.placeholder = isAppsScript
-    ? 'https://script.google.com/macros/s/xxxxxxxxxx/exec'
-    : 'https://sheetdb.io/api/v1/xxxxxxxxxx';
+function closeGuides(){
+  guidesOverlay.classList.remove('open');
 }
-wizContactsSourceInput.onchange = updateWizContactsHelp;
-function exitWizard(){
-  wizardOverlay.classList.remove('open');
-}
-function showWizardStep(i){
-  wizardStepsEls.forEach((el, idx) => el.classList.toggle('active', idx === i));
-  wizardProgress.textContent = 'שלב ' + (i+1) + ' מתוך ' + wizardStepsEls.length;
-  wizardBackBtn.style.visibility = i === 0 ? 'hidden' : 'visible';
-  wizardNextBtn.textContent = (i === wizardStepsEls.length - 1) ? 'שמירה וסיום' : 'הבא';
-  if(i === wizardStepsEls.length - 1) renderWizardSummary();
-}
-function renderWizardSummary(){
-  const rows = [
-    ['שם תצוגה', wizLabelInput.value.trim() || 'לא הוגדר (יוצג לפי מספר השלוחה)'],
-    ['טוקן', wizTokenInput.value.trim() || '—'],
-    ['מספר שלוחה', wizExtInput.value.trim() || '1'],
-    ['מקור אנשי קשר', wizContactsSourceInput.value === 'appsscript' ? 'סקריפט Google Sheets' : 'SheetDB'],
-    ['כתובת API לאנשי קשר', wizContactsApiInput.value.trim() || 'לא הוגדר'],
-    ['רשימת צינתוקים', wizTzintukListInput.value.trim() || 'לא הוגדר'],
-    ['זיהוי מתקשר לצינתוק', wizTzintukCallerIdInput.value.trim() || 'לא הוגדר']
-  ];
-  wizardSummary.innerHTML = rows.map(([label, val]) =>
-    '<div><b>' + label + ':</b> <bdi dir="ltr">' + val.replace(/</g,'&lt;') + '</bdi></div>'
-  ).join('');
-}
-function finishWizard(){
-  const t = wizTokenInput.value.trim();
-  if(!t){
-    alert('נא להזין טוקן לפני הסיום');
-    wizardStepIndex = 1;
-    showWizardStep(1);
-    return;
-  }
-  const sys = upsertActiveSystem({
-    token: t,
-    label: wizLabelInput.value.trim(),
-    ext: wizExtInput.value.trim() || '1',
-    tzintukList: wizTzintukListInput.value.trim(),
-    tzintukCallerId: wizTzintukCallerIdInput.value.trim(),
-    contactsApi: wizContactsApiInput.value.trim(),
-    contactsSource: wizContactsSourceInput.value
-  });
-  exitWizard();
-  enterSystem(sys.id);
-}
-
-document.getElementById('openWizardBtn').onclick = openWizard;
-wizardExitBtn.onclick = () => { exitWizard(); openSettings(); };
-wizardBackBtn.onclick = () => {
-  if(wizardStepIndex === 0) return;
-  wizardStepIndex--;
-  showWizardStep(wizardStepIndex);
-};
-wizardNextBtn.onclick = () => {
-  const stepEl = wizardStepsEls[wizardStepIndex];
-  if(stepEl.dataset.require === 'token' && !wizTokenInput.value.trim()){
-    alert('נא להזין טוקן לפני שממשיכים, או ללחוץ על "יציאה מהמדריך" כדי למלא זאת אחר כך');
-    return;
-  }
-  if(wizardStepIndex === wizardStepsEls.length - 1){
-    finishWizard();
-    return;
-  }
-  wizardStepIndex++;
-  showWizardStep(wizardStepIndex);
-};
+document.getElementById('helpFab').onclick = openGuides;
+document.getElementById('closeGuidesBtn').onclick = closeGuides;
 
 // ===== מסך "רשימת מערכות" (בסגנון רשימת השיחות של וואטסאפ) =====
 // מוצג רק כשמוגדרת יותר ממערכת אחת - כל שורה היא מערכת, עם אווטאר/שם ותצוגה מקדימה
