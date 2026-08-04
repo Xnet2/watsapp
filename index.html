@@ -203,6 +203,34 @@
   }
   .rec-time{font-size:.7rem;color:var(--text-faint);flex-shrink:0;min-width:28px;text-align:left;}
 
+  /* ===== תמלול הודעה (Google Speech-to-Text) - מוצג מתחת לבועת ההודעה ===== */
+  .transcript-wrap{width:330px;max-width:100%;margin-top:2px;}
+  .rec-row.rec-mine .transcript-wrap{align-self:flex-end;}
+  .transcript-btn{
+    background:none;border:none;cursor:pointer;padding:2px 6px;
+    font-size:.76rem;color:var(--accent-dark);display:flex;align-items:center;gap:4px;
+  }
+  .transcript-btn:hover{text-decoration:underline;}
+  .transcript-btn svg{width:13px;height:13px;flex-shrink:0;}
+  .transcript-btn[disabled]{opacity:.6;cursor:default;text-decoration:none;}
+  .transcript-box{
+    background:var(--surface);border-radius:10px;padding:7px 10px;
+    box-shadow:0 1px 1px rgba(0,0,0,.06);
+  }
+  .rec-row.rec-mine .transcript-box{background:var(--mine-bg);}
+  .transcript-text{
+    font-size:.82rem;line-height:1.5;color:var(--text-dim);white-space:pre-wrap;margin:0;
+  }
+  .transcript-text.collapsed{
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .transcript-toggle{
+    background:none;border:none;cursor:pointer;padding:0;margin-top:2px;
+    font-size:.76rem;color:var(--accent-dark);font-weight:600;
+  }
+  .transcript-toggle:hover{text-decoration:underline;}
+  .transcript-text.error{color:var(--danger);}
+
   /* תמונת השולח המשובצת בתוך בועת ההודעה הקולית + תג מיקרופון קטן שרוכב על פינתה */
   .voice-avatar-wrap{position:relative;flex-shrink:0;}
   .voice-avatar{
@@ -621,6 +649,9 @@
     <label for="contactsApiInput">כתובת API לאנשי קשר</label>
     <input type="text" id="contactsApiInput" placeholder="https://sheetdb.io/api/v1/xxxxxxxxxx" dir="ltr">
 
+    <label for="speechApiKeyInput">מפתח Groq API (חינם, לתמלול הודעות)</label>
+    <input type="text" id="speechApiKeyInput" placeholder="אופציונלי - gsk_..." dir="ltr">
+
     <div class="btnrow">
       <button class="secondary" id="closeSettingsBtn">סגירה</button>
       <button class="primary" id="saveSettingsBtn">שמירה וטעינה</button>
@@ -871,6 +902,15 @@ const LEGACY_LS_EXT = 'yemot_ext';
 const LEGACY_LS_TZINTUK_LIST = 'yemot_tzintuk_list';
 const LEGACY_LS_TZINTUK_CALLERID = 'yemot_tzintuk_callerid';
 const LEGACY_LS_CONTACTS_API = 'yemot_contacts_api';
+// מפתח Groq API - הגדרה גלובלית של הדפדפן (לא חלק מהמערכת/הטוקן),
+// ולכן בכוונה לא נכלל בקישור ההזמנה (ר' inviteLinkBtn) - זה מפתח אישי שלא רוצים
+// להעביר בשום צורה לחברי קבוצה אחרים.
+const LS_SPEECH_API_KEY = 'yemot_speech_api_key';
+function getSpeechApiKey(){ return (localStorage.getItem(LS_SPEECH_API_KEY) || '').trim(); }
+function setSpeechApiKey(key){
+  if(key) localStorage.setItem(LS_SPEECH_API_KEY, key.trim());
+  else localStorage.removeItem(LS_SPEECH_API_KEY);
+}
 
 // הצגת הודעת "טוסט" קטנה וזמנית בתחתית המסך (למשל אישור העתקת קישור הזמנה)
 const toastEl = document.getElementById('toastEl');
@@ -985,6 +1025,7 @@ const extInput = document.getElementById('extInput');
 const tzintukListInput = document.getElementById('tzintukListInput');
 const contactsApiInput = document.getElementById('contactsApiInput');
 const contactsSourceInput = document.getElementById('contactsSourceInput');
+const speechApiKeyInput = document.getElementById('speechApiKeyInput');
 const invitedNotice = document.getElementById('invitedNotice');
 const addAnotherSystemBtn = document.getElementById('addAnotherSystemBtn');
 
@@ -1068,6 +1109,10 @@ function openSettings(){
     contactsApiInput.value = getContactsApiUrl();
     contactsSourceInput.value = getContactsSource();
   }
+
+  // מפתח ה-API לתמלול הוא גלובלי לדפדפן ולא חלק ממערכת ספציפית - נטען תמיד מאותו מקום,
+  // גם במסך "עריכת מערכת" של קבוצה שהצטרפו אליה דרך הזמנה (invited), כי הוא לא חלק מהזמנה.
+  speechApiKeyInput.value = getSpeechApiKey();
 
   invitedNotice.style.display = invited ? 'flex' : 'none';
   inviteLinkBtn.style.display = (sys && !invited) ? 'flex' : 'none';
@@ -1163,6 +1208,8 @@ document.getElementById('closeSettingsBtn').onclick = closeSettings;
 document.getElementById('refreshBtn').onclick = loadRecordings;
 
 document.getElementById('saveSettingsBtn').onclick = () => {
+  // גלובלי - נשמר תמיד, בלי קשר לאיזו מערכת פעילה כרגע או אם היא "invited".
+  setSpeechApiKey(speechApiKeyInput.value);
   const sys = getActiveSystem();
   if(sys && sys.invited){
     // מערכת שהצטרפו אליה דרך קישור הזמנה: השדות הרגישים נעולים ומוצגים ממוסכים (ר' openSettings),
@@ -2247,6 +2294,53 @@ async function computeWaveform(url){
   }
 }
 
+// ===== תמלול הודעה (Groq API - Whisper, יש מכסה חינמית: 2,000 בקשות ביום) =====
+// שימו לב: זה *לא* ה-SpeechRecognition החינמי של הדפדפן - הוא לא יודע לתמלל קובץ הקלטה
+// קיים, רק זרם מיקרופון חי. Groq מריצה את מודל Whisper בשרתים שלה ומחזירה טקסט - יש לה
+// רמה חינמית נדיבה (בלי כרטיס אשראי), אבל דורשת מפתח API שמוגדר בהגדרות (getSpeechApiKey).
+// הערה חשובה: אם התמלול נכשל עם שגיאת CORS בקונסול - Groq לא מתירה קריאה ישירה מהדפדפן
+// מהמקור הזה, ואז צריך פרוקסי קטן (למשל Google Apps Script Web App) שמעביר את הבקשה הלאה.
+
+// קאש תמלולים לפי מערכת+שם קובץ, כדי לא לתמלל שוב את אותה הודעה בכל טעינה/רענון.
+const LS_TRANSCRIPTS_CACHE = 'yemot_transcripts_cache';
+function getTranscriptsCache(){
+  try{ return JSON.parse(localStorage.getItem(LS_TRANSCRIPTS_CACHE) || '{}'); }catch(err){ return {}; }
+}
+function transcriptCacheKey(fileName){ return (getActiveSystemId() || 'x') + '|' + fileName; }
+function getCachedTranscript(fileName){ return getTranscriptsCache()[transcriptCacheKey(fileName)] || null; }
+function setCachedTranscript(fileName, text){
+  const cache = getTranscriptsCache();
+  cache[transcriptCacheKey(fileName)] = text;
+  try{ localStorage.setItem(LS_TRANSCRIPTS_CACHE, JSON.stringify(cache)); }catch(err){ /* אחסון מלא - פשוט לא יישמר קאש הפעם */ }
+}
+
+// שולח את קובץ ההקלטה כפי שהוא (multipart/form-data, בלי המרות) ל-Groq ומחזיר את הטקסט.
+async function transcribeAudioUrl(url, fileName){
+  const apiKey = getSpeechApiKey();
+  if(!apiKey) throw new Error('לא הוגדר מפתח Groq API בהגדרות');
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('שגיאה בהורדת ההקלטה (http ' + res.status + ')');
+  const blob = await res.blob();
+
+  const form = new FormData();
+  form.append('file', blob, fileName || 'audio.wav');
+  form.append('model', 'whisper-large-v3-turbo');
+  form.append('language', 'he');
+  form.append('response_format', 'json');
+
+  const apiRes = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + apiKey },
+    body: form
+  });
+  const data = await apiRes.json().catch(() => ({}));
+  if(!apiRes.ok){
+    throw new Error((data.error && data.error.message) || ('שגיאה מ-Groq (http ' + apiRes.status + ')'));
+  }
+  const text = (data.text || '').trim();
+  return text || '(לא זוהה טקסט בהקלטה)';
+}
+
 const waveformObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if(entry.isIntersecting && entry.target._loadWaveform){
@@ -2433,6 +2527,62 @@ function buildRecItem(file, token, ext){
   bubble.appendChild(playBtn);
   bubble.appendChild(waveRow);
   col.appendChild(bubble);
+
+  // ===== תמלול הודעה - אזור מתחת לבועה, לפי דרישה (כפתור "תמלל"), עם קאש ואפשרות הרחבה =====
+  const transcriptWrap = document.createElement('div');
+  transcriptWrap.className = 'transcript-wrap';
+  col.appendChild(transcriptWrap);
+
+  function renderTranscriptBox(text){
+    transcriptWrap.innerHTML = '';
+    const box = document.createElement('div');
+    box.className = 'transcript-box';
+    const p = document.createElement('p');
+    p.className = 'transcript-text collapsed';
+    p.textContent = text;
+    box.appendChild(p);
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'transcript-toggle';
+    toggle.textContent = 'הצג עוד';
+    toggle.onclick = () => {
+      const expanded = p.classList.toggle('collapsed') === false;
+      toggle.textContent = expanded ? 'הצג פחות' : 'הצג עוד';
+    };
+    box.appendChild(toggle);
+    transcriptWrap.appendChild(box);
+  }
+
+  function renderTranscribeButton(){
+    transcriptWrap.innerHTML = '';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'transcript-btn';
+    btn.innerHTML = ICON_MIC + '<span>תמלול הודעה</span>';
+    btn.onclick = async () => {
+      btn.disabled = true;
+      btn.innerHTML = '<span>מתמלל…</span>';
+      try{
+        const text = await transcribeAudioUrl(src, file.name);
+        setCachedTranscript(file.name, text);
+        renderTranscriptBox(text);
+      }catch(err){
+        transcriptWrap.innerHTML = '';
+        const errBox = document.createElement('div');
+        errBox.className = 'transcript-box';
+        const errP = document.createElement('p');
+        errP.className = 'transcript-text error';
+        errP.textContent = 'שגיאה בתמלול: ' + err.message;
+        errBox.appendChild(errP);
+        transcriptWrap.appendChild(errBox);
+      }
+    };
+    transcriptWrap.appendChild(btn);
+  }
+
+  const cachedTranscript = getCachedTranscript(file.name);
+  if(cachedTranscript) renderTranscriptBox(cachedTranscript);
+  else renderTranscribeButton();
 
   row.appendChild(col);
 
@@ -2922,7 +3072,5 @@ if(!applyInviteLinkIfPresent()){
   }
 }
 </script>
-  <script src="https://xnet2.github.io/status/xnet-badge.js"></script>
-
 </body>
 </html>
