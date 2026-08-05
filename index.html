@@ -81,6 +81,16 @@
   header button.icon:hover{background:rgba(255,255,255,.18);}
   header button.icon svg{width:17px;height:17px;}
 
+  /* בניידים צרים - חמישה כפתורי אייקון בכותרת (כולל כפתור העזרה החדש) עלולים להידחס
+     יחד עם הכותרת; מצמצמים מעט את הריפוד/גודל/מרווחים כדי שהכל יישאר מסודר בשורה אחת. */
+  @media (max-width:360px){
+    header{padding:12px 12px;}
+    header .actions{gap:3px;}
+    header button.icon{width:32px;height:32px;}
+    header button.icon svg{width:15px;height:15px;}
+    header .title b{font-size:.96rem;}
+  }
+
   #list{
     flex:1;
     overflow-y:auto;
@@ -378,23 +388,6 @@
     padding:16px;
   }
 
-  /* כפתור "צריכים עזרה" צף בצד שמאל של הדף (חוץ מ-#app, כדי שיישאר מוצמד לחלון ולא
-     למרכז המצומצם של תיבת האפליקציה) - פותח את מסך ההדרכות. */
-  #helpFab{
-    position:fixed;
-    left:18px;
-    bottom:22px;
-    z-index:30;
-    display:flex;align-items:center;gap:7px;
-    background:var(--accent);color:#fff;border:none;
-    padding:11px 16px;border-radius:999px;
-    font-family:inherit;font-size:.85rem;font-weight:600;cursor:pointer;
-    box-shadow:0 4px 14px rgba(0,0,0,.22);
-    transition:background .15s, transform .1s;
-  }
-  #helpFab:hover{background:var(--accent-dark);}
-  #helpFab:active{transform:scale(.96);}
-  #helpFab svg{width:17px;height:17px;flex-shrink:0;}
   .ov.open{display:flex;}
   .ov-box{
     background:#fff;border-radius:16px;padding:24px;width:100%;max-width:420px;
@@ -615,11 +608,6 @@
 </head>
 <body>
 
-<button type="button" id="helpFab">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-  <span>צריכים עזרה?</span>
-</button>
-
 <div id="app">
   <header>
     <div class="title">
@@ -645,6 +633,9 @@
       </button>
       <button class="icon" id="refreshBtn" title="רענון" aria-label="רענון">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+      <button class="icon" id="helpFab" title="הדרכות ועזרה" aria-label="הדרכות ועזרה">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       </button>
       <button class="icon" id="contactsBtn" title="אנשי קשר" aria-label="אנשי קשר">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -788,10 +779,14 @@
           <ol class="wizard-steplist">
             <li>פותחים גיליון Google Sheets חדש/קיים, ובשורה הראשונה שלו כותרות העמודות: <bdi dir="ltr">SystemKey, ContactId, Name, Phone, PhotoUrl, UpdatedAt</bdi>.</li>
             <li>בתוך הגיליון: תפריט <bdi dir="ltr">Extensions ← Apps Script</bdi>.</li>
-            <li>מוחקים את הקוד הקיים ומדביקים במקומו את קובץ הסקריפט <bdi dir="ltr">contacts-appsscript.gs</bdi> שסופק, ושומרים.</li>
+            <li>מוחקים את הקוד הקיים ומדביקים במקומו את קוד הסקריפט <bdi dir="ltr">contacts-appsscript.gs</bdi> - מפורסם בקישור הבא (הסקריפט ארוך ומתעדכן מדי פעם, לכן לא מודבק כאן וכדאי להעתיק תמיד את הגרסה העדכנית מהפוסט):</li>
             <li><bdi dir="ltr">Deploy ← New deployment</bdi>, סוג <bdi dir="ltr">Web app</bdi>. תחת Execute as בוחרים "Me", ותחת Who has access בוחרים "Anyone".</li>
             <li>מעתיקים את כתובת ה-Web app שמתקבלת (מסתיימת ב-<bdi dir="ltr">/exec</bdi>) ומדביקים בשדה "כתובת API לאנשי קשר".</li>
           </ol>
+          <a class="wizard-link" href="https://mitmachim.top/post/1216976" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            פתיחת הפוסט עם קוד הסקריפט
+          </a>
         </div>
 
         <div class="guide-panel" id="guidePanelTzintuk">
