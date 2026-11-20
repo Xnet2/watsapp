@@ -1,0 +1,595 @@
+:root{
+  --bg:#ECE5DD;
+  --surface:#FFFFFF;
+  --border:#E9E4DC;
+  --text:#111B21;
+  --text-dim:#54656F;
+  --text-faint:#8696A0;
+  --accent:#00A884;
+  --accent-dark:#008069;
+  --mine-bg:#D9FDD3;
+  --mine-bg-hover:#CFF0C4;
+  --danger:#DC2626;
+  --header:#008069;
+  --radius:8px;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+body{
+  font-family:'Assistant',sans-serif;
+  color:var(--text);
+  display:flex;
+  justify-content:center;
+  -webkit-font-smoothing:antialiased;
+  /* רקע כללי מחוץ לתיבת ההודעות: המון אלמנטים קטנים ושקופים, בסגנון טפט וואטסאפ -
+     תבנית SVG חוזרת של אייקונים עדינים (בועת צ'אט, מיקרופון, גל קול, טלפון, תו מוזיקלי,
+     כוכב, לב, נקודות) בשקיפות נמוכה מאוד כדי שלא יהיה משעמם לעין אבל גם לא יבלוט/יסיח דעת.
+     צבע הבסיס (--bg) נשאר כרקע התחתון, והתבנית רק "רוכבת" עליו. */
+  background-color:var(--bg);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cg fill='none' stroke='%23000000' stroke-opacity='0.05' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M40 28h34a9 9 0 0 1 9 9v10a9 9 0 0 1-9 9H57l-9 8v-8h-8a9 9 0 0 1-9-9V37a9 9 0 0 1 9-9z'/%3E%3Cpath d='M132 50a26 26 0 0 1 36 0'/%3E%3Cpath d='M139 58a15 15 0 0 1 22 0'/%3E%3Ccircle cx='150' cy='66' r='2.4' fill='%23000000' fill-opacity='0.05' stroke='none'/%3E%3Cpath d='M258 24a15 15 0 0 1 15 15v14a15 15 0 0 1-30 0V39a15 15 0 0 1 15-15z'/%3E%3Cpath d='M246 55a12 12 0 0 0 24 0'/%3E%3Cpath d='M258 67v10M252 77h12'/%3E%3Cpath d='M362 38l5 12 12 5-12 5-5 12-5-12-12-5 12-5z'/%3E%3Cpath d='M30 140c5 8 5 16 0 24M42 130c9 12 9 28 0 40M54 120c13 16 13 36 0 52'/%3E%3Cpath d='M136 144a12 12 0 0 1 24 0c0 8-12 16-12 16s-12-8-12-16z'/%3E%3Cpath d='M248 138v26h-9v-26z'/%3E%3Cpath d='M248 142l9-13a5 5 0 0 1 9 4l-2.5 9h11a6 6 0 0 1 5.8 7.4l-4 15a6 6 0 0 1-5.8 4.6H248'/%3E%3Cpath d='M336 118l46 17-17 46-9-24-27-9z'/%3E%3Cpath d='M354 128l-11 27'/%3E%3Cpath d='M55 236l4 10 10 4-10 4-4 10-4-10-10-4 10-4z'/%3E%3Cpath d='M144 262a9 9 0 0 0 9-9v-32l16-4v29a9 9 0 1 1-6-8.5'/%3E%3Cpath d='M235 232h40M235 240h30M235 248h35'/%3E%3Crect x='335' y='241' width='40' height='28' rx='5'/%3E%3Ccircle cx='355' cy='255' r='8'/%3E%3Crect x='349' y='233' width='12' height='8' rx='2'/%3E%3Crect x='28' y='336' width='42' height='28' rx='3'/%3E%3Cpath d='M28 338l21 17 21-17'/%3E%3Cpath d='M150 336c-13 0-22 10-22 22 0 15 22 32 22 32s22-17 22-32c0-12-9-22-22-22z'/%3E%3Ccircle cx='150' cy='358' r='6'/%3E%3Cpath d='M235 330h42a9 9 0 0 1 9 9v14a9 9 0 0 1-9 9h-22l-9 8v-8h-11a9 9 0 0 1-9-9v-14a9 9 0 0 1 9-9z'/%3E%3Ccircle cx='355' cy='352' r='15'/%3E%3Cpath d='M355 342v11l8 6'/%3E%3C/g%3E%3C/svg%3E");
+  background-repeat:repeat;
+  background-size:400px 400px;
+}
+#app{
+  width:100%;
+  max-width:400px;
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  background:var(--bg);
+  box-shadow:0 0 40px rgba(0,0,0,.06);
+}
+button{font-family:inherit;}
+button:focus-visible, input:focus-visible, .waveform:focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px;
+}
+svg{display:block;}
+
+header{
+  background:var(--header);
+  color:#fff;
+  padding:14px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-shrink:0;
+}
+header .title{display:flex;flex-direction:column;gap:2px;}
+header .title-row{display:flex;align-items:center;gap:8px;}
+header .app-logo{display:flex;flex-shrink:0;line-height:0;}
+header .app-logo svg{display:block;}
+header .title b{font-size:1.05rem;font-weight:600;letter-spacing:.01em;}
+header .title span{font-size:.76rem;color:rgba(255,255,255,.75);font-weight:400;}
+header .actions{display:flex;gap:6px;}
+header button.icon{
+  width:36px;height:36px;
+  background:rgba(255,255,255,.08);border:none;color:#fff;cursor:pointer;
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+header button.icon:hover{background:rgba(255,255,255,.18);}
+header button.icon svg{width:17px;height:17px;}
+
+/* בניידים צרים - חמישה כפתורי אייקון בכותרת (כולל כפתור העזרה החדש) עלולים להידחס
+   יחד עם הכותרת; מצמצמים מעט את הריפוד/גודל/מרווחים כדי שהכל יישאר מסודר בשורה אחת. */
+@media (max-width:360px){
+  header{padding:12px 12px;}
+  header .actions{gap:3px;}
+  header button.icon{width:32px;height:32px;}
+  header button.icon svg{width:15px;height:15px;}
+  header .title b{font-size:.96rem;}
+}
+
+#list{
+  flex:1;
+  overflow-y:auto;
+  padding:14px 12px 10px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(circle at 8% 18%, rgba(0,0,0,.02) 0, transparent 45%),
+    radial-gradient(circle at 92% 82%, rgba(0,0,0,.02) 0, transparent 45%);
+}
+
+/* מסך "רשימת המערכות" (מוצג כשיש יותר ממערכת אחת מחוברת) - תופס את כל מקום
+   ה-#list/#bottombar כשמופעל (ר' #app.home-mode) ומציג כל מערכת כמו שורת שיחה בוואטסאפ. */
+#homeScreen{display:none;flex:1;min-height:0;flex-direction:column;overflow:hidden;background:var(--bg);}
+#app.home-mode #homeScreen{display:flex;}
+#app.home-mode #list, #app.home-mode #bottombar{display:none;}
+#homeListEl{flex:1;overflow-y:auto;padding:6px 8px;}
+.sys-row{
+  display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:10px;
+  cursor:pointer;background:transparent;transition:background .12s;
+}
+.sys-row:hover{background:rgba(0,0,0,.04);}
+.sys-avatar{
+  width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;
+  background:#DFE5E7;display:flex;align-items:center;justify-content:center;color:var(--text-faint);
+}
+.sys-avatar img{width:100%;height:100%;object-fit:cover;}
+.sys-avatar svg{width:22px;height:22px;}
+.sys-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;}
+.sys-toprow{display:flex;align-items:baseline;justify-content:space-between;gap:8px;}
+.sys-label{font-weight:600;font-size:.98rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sys-time{font-size:.72rem;color:var(--text-faint);flex-shrink:0;}
+.sys-preview{
+  font-size:.82rem;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  display:flex;align-items:center;gap:4px;
+}
+.sys-preview svg{width:14px;height:14px;flex-shrink:0;color:var(--text-faint);}
+.home-empty{padding:50px 24px;text-align:center;color:var(--text-dim);line-height:1.6;}
+
+/* קופסת סטטוס להעלאה בתהליך/שגיאה - לא הודעה אמיתית, לכן נשארת עצמאית */
+.rec-item{
+  background:var(--surface);
+  border:none;
+  border-radius:var(--radius);
+  padding:10px 14px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  box-shadow:0 1px 1px rgba(0,0,0,.08);
+}
+.rec-item.pending{box-shadow:0 0 0 2px var(--accent) inset;}
+.rec-item.error-item{background:#FFF5F5;}
+
+/* שורת הודעה: עמודה עם בועת ההודעה הקולית בלבד. גודל הבועה קבוע לכל ההודעות. */
+.rec-row{display:flex;align-items:flex-start;gap:5px;max-width:94%;align-self:flex-start;}
+/* הודעות "שלי" מיושרות לצד השמאלי (הפוך מהכיוון הכללי RTL), ובצבע ירקרק כמו הודעות יוצאות בוואטסאפ */
+.rec-row.rec-mine{align-self:flex-end;}
+
+.rec-col{display:flex;flex-direction:column;min-width:0;}
+
+/* הבועה עצמה - רוחב קבוע לכל ההודעות, בלי תלות באורך ההקלטה, כדי שלא יהיו בעיות תצוגה.
+   עיצוב "הודעה קולית" מדויק כמו בוואטסאפ: בועה מעוגלת לגמרי בלי זנב, עם תמונת השולח
+   משובצת בתוך הבועה בצד אחד ותג מיקרופון קטן שיושב על פינת התמונה. */
+.rec-bubble{
+  position:relative;
+  width:330px;
+  max-width:100%;
+  background:var(--surface);
+  border:none;
+  border-radius:22px;
+  padding:6px 12px 6px 6px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  box-shadow:0 1px 1px rgba(0,0,0,.08);
+  transition:background .12s;
+}
+.rec-bubble:hover{background:#FAFAF9;}
+.rec-row.rec-mine .rec-bubble{background:var(--mine-bg);padding:6px 6px 6px 12px;}
+.rec-row.rec-mine .rec-bubble:hover{background:var(--mine-bg-hover);}
+/* בהודעות "שלי" סדר האלמנטים בתוך הבועה מתהפך, כך שהתמונה עוברת לצד השני */
+.rec-row.rec-mine .rec-bubble{flex-direction:row-reverse;}
+
+.play-btn{
+  width:36px;height:36px;flex-shrink:0;border-radius:50%;
+  background:var(--accent);border:none;color:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .1s, background .15s;
+}
+.play-btn:hover{background:var(--accent-dark);}
+.play-btn:active{transform:scale(.92);}
+.play-btn svg{width:14px;height:14px;}
+
+.rec-wave-row{flex:1;min-width:0;display:flex;align-items:center;gap:6px;}
+.waveform{
+  position:relative;
+  flex:1;height:24px;display:flex;align-items:center;gap:1px;cursor:pointer;
+  min-width:0;
+}
+.wf-bar{
+  flex:1 1 0;min-width:1px;border-radius:2px;background:#D1D7DB;
+}
+.wf-bar.played{background:var(--accent);}
+/* עיגול-מחוון (thumb) שיושב על הגל בנקודת ההשמעה הנוכחית, בדיוק כמו בוואטסאפ.
+   הפסים מסודרים RTL (הפס הראשון מימין), אז המחוון זז מימין (התחלה) לשמאל (סוף) לפי "right" ולא "left".
+   pointer-events:none כדי שלחיצה בכל מקום על הגל (כולל במקום שבו נמצא הכדור) תמיד
+   תיתפס ע"י waveform.onclick ותקפיץ את הכדור לשם ישירות - בלי מנגנון גרירה מורכב. */
+.wf-thumb{
+  position:absolute;
+  top:50%;
+  right:0;
+  width:11px;height:11px;border-radius:50%;
+  background:var(--accent);
+  box-shadow:0 1px 2px rgba(0,0,0,.25);
+  transform:translate(50%,-50%);
+  pointer-events:none;
+  transition:right .05s linear;
+}
+.rec-time{font-size:.7rem;color:var(--text-faint);flex-shrink:0;min-width:28px;text-align:left;}
+
+/* ===== תמלול הודעה (Google Speech-to-Text) - מוצג מתחת לבועת ההודעה ===== */
+.transcript-wrap{width:330px;max-width:100%;margin-top:2px;}
+.rec-row.rec-mine .transcript-wrap{align-self:flex-end;}
+.transcript-btn{
+  background:none;border:none;cursor:pointer;padding:2px 6px;
+  font-size:.76rem;color:var(--accent-dark);display:flex;align-items:center;gap:4px;
+}
+.transcript-btn:hover{text-decoration:underline;}
+.transcript-btn svg{width:13px;height:13px;flex-shrink:0;}
+.transcript-btn[disabled]{opacity:.6;cursor:default;text-decoration:none;}
+.transcript-box{
+  background:var(--surface);border-radius:10px;padding:7px 10px;
+  box-shadow:0 1px 1px rgba(0,0,0,.06);
+}
+.rec-row.rec-mine .transcript-box{background:var(--mine-bg);}
+.transcript-text{
+  font-size:.82rem;line-height:1.5;color:var(--text-dim);white-space:pre-wrap;margin:0;
+}
+.transcript-text.collapsed{
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.transcript-toggle{
+  background:none;border:none;cursor:pointer;padding:0;margin-top:2px;
+  font-size:.76rem;color:var(--accent-dark);font-weight:600;
+}
+.transcript-toggle:hover{text-decoration:underline;}
+.transcript-text.error{color:var(--danger);}
+
+/* תמונת השולח המשובצת בתוך בועת ההודעה הקולית + תג מיקרופון קטן שרוכב על פינתה */
+.voice-avatar-wrap{position:relative;flex-shrink:0;}
+.voice-avatar{
+  position:relative;width:38px;height:38px;border-radius:50%;flex-shrink:0;
+  background:var(--border);color:var(--text-faint);cursor:pointer;
+}
+.voice-avatar-img{
+  width:100%;height:100%;border-radius:50%;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+.voice-avatar-img img{width:100%;height:100%;object-fit:cover;display:block;}
+.voice-avatar-img svg{width:16px;height:16px;}
+/* התג יושב על הפינה הפנימית של התמונה, פונה לכיוון כפתור הנגן/הגל */
+.voice-avatar-badge{
+  position:absolute;bottom:-2px;left:-2px;
+  width:17px;height:17px;border-radius:50%;
+  background:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--surface);
+}
+.rec-row.rec-mine .voice-avatar-badge{
+  left:auto;right:-2px;
+  border-color:var(--mine-bg);
+  background:var(--accent-dark);
+}
+.voice-avatar-badge svg{width:8px;height:8px;color:#fff;}
+
+/* חלונית ריחוף קטנה עם שם/תאריך/שעה/משך, נפתחת רק כשעוברים עם העכבר מעל התמונה.
+   position:fixed (במקום absolute) כדי שהחלונית תמוקם ביחס לכל המסך ולא ביחס
+   לשורת ההודעה - כך היא לעולם לא נחתכת/מוסתרת ע"י ה-overflow של רשימת הפיד (#list),
+   גם כשההודעה נמצאת קרוב לקצה העליון של הרשימה. המיקום המדויק (left/bottom) נקבע
+   דינמית ב-JS לפי מיקום התמונה על המסך, ו-arrow-x קובע את יישור החץ הקטן בהתאם. */
+.voice-tooltip{
+  position:fixed;
+  left:0;
+  bottom:0;
+  background:#20272B;
+  color:#fff;
+  border-radius:10px;
+  padding:9px 11px;
+  font-size:.72rem;
+  line-height:1.65;
+  white-space:nowrap;
+  box-shadow:0 6px 20px rgba(0,0,0,.28);
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition:opacity .15s ease, transform .15s ease;
+  transform:translateY(4px);
+  z-index:1000;
+  text-align:right;
+}
+.voice-tooltip::after{
+  content:'';
+  position:absolute;
+  top:100%;
+  left:var(--arrow-x, 50%);
+  transform:translateX(-50%);
+  border:5px solid transparent;
+  border-top-color:#20272B;
+}
+.voice-tooltip.show{
+  opacity:1;visibility:visible;transform:translateY(0);pointer-events:auto;
+}
+.voice-tooltip b{display:block;font-size:.78rem;margin-bottom:3px;font-weight:600;}
+.voice-tooltip .tt-row{color:#C3CBD1;}
+.voice-tooltip .tt-dur{color:#fff;}
+.voice-tooltip .tt-add{
+  display:flex;align-items:center;gap:4px;margin-top:6px;
+  background:none;border:none;color:var(--accent);
+  font-family:inherit;font-size:.72rem;font-weight:600;cursor:pointer;padding:0;
+  pointer-events:auto;
+}
+.voice-tooltip .tt-add svg{width:11px;height:11px;}
+
+
+/* תפריט קליק ימני למחיקת הקלטה - במקום כפתור מחיקה קבוע על המסך */
+.ctx-menu{
+  position:fixed;z-index:80;display:none;
+  background:#fff;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);
+  padding:6px;min-width:180px;
+}
+.ctx-menu.open{display:block;}
+.ctx-item{
+  width:100%;display:flex;align-items:center;gap:8px;
+  padding:10px 12px;border:none;background:none;border-radius:7px;
+  font-family:inherit;font-size:.85rem;cursor:pointer;text-align:right;color:var(--text);
+}
+.ctx-item:hover{background:var(--bg);}
+.ctx-item.danger{color:var(--danger);}
+.ctx-item svg{width:15px;height:15px;flex-shrink:0;}
+
+.status-text{font-size:.82rem;color:var(--text-dim);}
+.status-text.error{color:var(--danger);}
+
+.empty-state, .status-line{
+  text-align:center;color:var(--text-dim);font-size:.9rem;
+  padding:40px 16px;line-height:1.6;white-space:pre-line;
+}
+.status-line.error{color:var(--danger);}
+
+#bottombar{
+  flex-shrink:0;
+  background:var(--surface);
+  padding:12px 16px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border-top:1px solid var(--border);
+}
+#bottombar button.attach{
+  width:38px;height:38px;border-radius:8px;border:none;background:none;color:var(--text-dim);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:background .15s,color .15s;
+}
+#bottombar button.attach:hover{background:var(--bg);color:var(--text);}
+#bottombar button.attach svg{width:19px;height:19px;}
+
+#recTimer{
+  flex:1;
+  font-size:.86rem;
+  color:var(--text-dim);
+  display:none;
+  align-items:center;
+  gap:8px;
+}
+#recTimer .dot{width:8px;height:8px;border-radius:50%;background:var(--danger);animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+#placeholderText{flex:1;color:var(--text-faint);font-size:.86rem;}
+
+#micBtn{
+  width:44px;height:44px;border-radius:50%;border:none;
+  background:var(--header);color:#fff;
+  cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .12s, background .15s;
+}
+#micBtn svg{width:17px;height:17px;}
+#micBtn.recording{background:var(--danger);}
+#micBtn:active{transform:scale(.92);}
+
+.ov{
+  position:fixed;inset:0;background:rgba(15,17,25,.55);
+  display:none;align-items:center;justify-content:center;z-index:50;
+  padding:16px;
+}
+
+.ov.open{display:flex;}
+.ov-box{
+  background:#fff;border-radius:16px;padding:24px;width:100%;max-width:420px;
+  max-height:90vh;overflow-y:auto;
+}
+.ov-box h2{margin:0 0 4px;font-size:1.08rem;font-weight:700;}
+.ov-box .sub{font-size:.8rem;color:var(--text-dim);margin-bottom:16px;}
+.ov-box label{display:block;font-size:.8rem;font-weight:600;margin:14px 0 5px;}
+.ov-box input[type="text"]{
+  width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:.92rem;
+  font-family:inherit;background:#FAFAFB;
+}
+.ov-box input[type="text"]:focus{border-color:var(--accent);background:#fff;}
+.ov-box select{
+  width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:.92rem;
+  font-family:inherit;background:#FAFAFB;color:var(--text);
+}
+.ov-box select:focus{border-color:var(--accent);background:#fff;}
+.ov-box select:disabled{background:#EDEEF0;color:var(--text-faint);cursor:not-allowed;}
+.ov-box .hint{font-size:.73rem;color:var(--text-faint);margin-top:5px;line-height:1.5;}
+.ov-box .warn{
+  display:flex;gap:8px;
+  background:#FFF8EC;border:1px solid #F5DFAE;border-radius:8px;
+  padding:10px 12px;font-size:.74rem;color:#8A6100;margin-top:16px;line-height:1.55;
+}
+.ov-box .warn svg{width:15px;height:15px;flex-shrink:0;margin-top:2px;color:#B8860B;}
+.ov-box input[type="text"][readonly].masked-field{
+  background:#EDEEF0;color:var(--text-faint);cursor:not-allowed;letter-spacing:2px;
+}
+.ov-box .btnrow{display:flex;gap:10px;margin-top:20px;}
+.ov-box .btnrow button{
+  flex:1;padding:11px;border-radius:8px;border:none;font-size:.9rem;font-weight:600;cursor:pointer;font-family:inherit;
+}
+.ov-box .btnrow button.primary{background:var(--header);color:#fff;}
+.ov-box .btnrow button.primary:hover{background:#000;}
+.ov-box .btnrow button.secondary{background:var(--bg);color:var(--text);}
+.ov-box .btnrow button.secondary:hover{background:var(--border);}
+.ov-box .btnrow button.danger-text{color:var(--danger);}
+
+.settings-systems-title{font-size:.8rem;font-weight:600;color:var(--text-dim);margin-bottom:8px;}
+#settingsSystemsList{
+  display:flex;flex-direction:column;gap:6px;
+  max-height:220px;overflow-y:auto;
+  margin-bottom:18px;padding-bottom:2px;
+  border-bottom:1px solid var(--border);
+}
+.settings-sys-row{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:8px;
+  background:var(--bg);cursor:pointer;
+  transition:background .15s;
+}
+.settings-sys-row:hover{background:#E4F7F1;}
+.settings-sys-row.active{background:#D9FDD3;}
+.settings-sys-row .settings-sys-avatar{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+}
+.settings-sys-row .settings-sys-avatar svg{width:17px;height:17px;}
+.settings-sys-row .settings-sys-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
+.settings-sys-row .settings-sys-info b{font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;}
+.settings-sys-row .settings-sys-info span{font-size:.72rem;color:var(--text-faint);}
+.settings-sys-row .settings-sys-del{
+  flex-shrink:0;width:28px;height:28px;border-radius:50%;
+  border:none;background:transparent;color:var(--text-faint);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.settings-sys-row .settings-sys-del:hover{background:rgba(220,38,38,.1);color:var(--danger);}
+.settings-sys-row .settings-sys-del svg{width:15px;height:15px;}
+
+.wizard-entry-btn{
+  display:flex;align-items:center;gap:10px;width:100%;
+  background:#F0FBF8;border:1px solid #BFE9DE;border-radius:10px;
+  padding:10px 12px;margin-bottom:14px;cursor:pointer;text-align:right;transition:background .15s;
+}
+.wizard-entry-btn:hover{background:#E4F7F1;}
+.wizard-entry-icon{
+  width:32px;height:32px;flex-shrink:0;border-radius:50%;background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+}
+.wizard-entry-icon svg{width:17px;height:17px;}
+.wizard-entry-text{display:flex;flex-direction:column;gap:1px;min-width:0;}
+.wizard-entry-text b{font-size:.86rem;color:var(--text);}
+.wizard-entry-text span{font-size:.74rem;color:var(--text-dim);}
+
+.guide-category{margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+.guide-category:last-of-type{border-bottom:none;margin-bottom:8px;padding-bottom:0;}
+.guide-category h3{margin:0 0 8px;font-size:1.02rem;font-weight:700;}
+.wizard-text{font-size:.85rem;color:var(--text-dim);line-height:1.65;margin:0 0 10px;}
+.wizard-steplist{margin:0 0 12px;padding-inline-start:20px;font-size:.83rem;color:var(--text-dim);line-height:1.75;}
+.wizard-link{
+  display:inline-flex;align-items:center;gap:6px;
+  color:var(--accent);font-weight:600;font-size:.82rem;text-decoration:none;margin-bottom:14px;
+}
+.wizard-link:hover{text-decoration:underline;}
+.wizard-link svg{width:14px;height:14px;flex-shrink:0;}
+
+/* ===== מסך "הדרכות" - חלון גדול עם ניווט קטגוריות/שלבים בצד ותוכן מתחלף ===== */
+.guides-box{
+  max-width:760px;width:100%;height:min(640px,88vh);
+  display:flex;flex-direction:column;padding:0;overflow:hidden;
+}
+.guides-header{display:flex;align-items:center;justify-content:space-between;padding:22px 24px 0;}
+.guides-header h2{margin:0;}
+.guides-close-x{
+  background:none;border:none;color:var(--text-faint);cursor:pointer;
+  padding:6px;border-radius:50%;display:flex;flex-shrink:0;
+}
+.guides-close-x:hover{background:var(--bg);color:var(--text);}
+.guides-close-x svg{width:19px;height:19px;}
+.guides-body{flex:1;min-height:0;display:flex;gap:20px;padding:16px 24px 22px;}
+.guides-nav{
+  flex-shrink:0;width:196px;display:flex;flex-direction:column;gap:3px;
+  border-left:1px solid var(--border);padding-left:16px;overflow-y:auto;
+}
+.guides-nav-item{
+  display:flex;align-items:center;gap:10px;width:100%;
+  background:none;border:none;text-align:right;cursor:pointer;
+  padding:10px 9px;border-radius:9px;font-family:inherit;
+  font-size:.83rem;color:var(--text-dim);font-weight:600;transition:background .12s;
+}
+.guides-nav-item:hover{background:var(--bg);}
+.guides-nav-item.active{background:#F0FBF8;color:var(--text);}
+.guides-nav-num{
+  width:23px;height:23px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--border);color:var(--text-dim);font-size:.73rem;font-weight:700;transition:background .12s,color .12s;
+}
+.guides-nav-item.active .guides-nav-num{background:var(--accent);color:#fff;}
+.guides-content{flex:1;min-width:0;overflow-y:auto;}
+.guide-panel{display:none;}
+.guide-panel.active{display:block;}
+.guide-panel h3{margin:0 0 10px;font-size:1.05rem;font-weight:700;display:flex;align-items:center;gap:9px;}
+.guide-req{
+  font-size:.68rem;font-weight:700;color:var(--accent-dark);background:#E4F7F1;
+  padding:2px 8px;border-radius:20px;
+}
+.guide-req.optional{color:var(--text-dim);background:var(--bg);}
+@media (max-width:600px){
+  .guides-box{height:92vh;}
+  .guides-body{flex-direction:column;padding:12px 16px 16px;gap:10px;}
+  .guides-nav{
+    width:100%;flex-direction:row;overflow-x:auto;overflow-y:visible;
+    border-left:none;border-bottom:1px solid var(--border);padding-left:0;padding-bottom:10px;
+  }
+  .guides-nav-item{flex-shrink:0;white-space:nowrap;}
+}
+
+.preview-player{display:flex;align-items:center;gap:12px;margin-top:6px;}
+.preview-player .play-btn{flex-shrink:0;}
+.preview-wave-row{flex:1;min-width:0;display:flex;align-items:center;gap:8px;}
+.preview-progress{
+  flex:1;height:6px;border-radius:3px;background:var(--border);cursor:pointer;position:relative;
+}
+.preview-progress-fill{
+  position:absolute;top:0;right:0;height:100%;width:0%;border-radius:3px;background:var(--accent);
+}
+#previewTimeLabel{min-width:32px;}
+.preview-btnrow{gap:8px;}
+.preview-btnrow button{padding:10px 4px;font-size:.82rem;}
+
+#contactsList{display:flex;flex-direction:column;gap:6px;margin-top:6px;max-height:50vh;overflow-y:auto;}
+.contact-row{
+  display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;cursor:pointer;
+  border:1px solid var(--border);background:#FAFAFB;transition:background .15s;
+}
+.contact-row:hover{background:var(--bg);}
+.contact-row .c-avatar{
+  width:38px;height:38px;border-radius:50%;flex-shrink:0;overflow:hidden;
+  background:var(--border);color:var(--text-faint);display:flex;align-items:center;justify-content:center;
+}
+.contact-row .c-avatar img{width:100%;height:100%;object-fit:cover;}
+.contact-row .c-avatar svg{width:18px;height:18px;}
+.contact-row .c-info{flex:1;min-width:0;}
+.contact-row .c-name{font-weight:600;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.contact-row .c-phone{font-size:.72rem;color:var(--text-faint);direction:ltr;text-align:right;}
+.empty-contacts{text-align:center;color:var(--text-dim);font-size:.85rem;padding:20px 8px;}
+
+.avatar-picker-row{display:flex;justify-content:center;margin-top:4px;}
+.avatar-pick{
+  width:92px;height:92px;border-radius:50%;border:none;background:var(--bg);color:var(--text-faint);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0;
+}
+.avatar-pick img{width:100%;height:100%;object-fit:cover;}
+.avatar-pick svg{width:34px;height:34px;}
+.avatar-actions{display:flex;justify-content:center;gap:14px;margin-top:8px;}
+.linklike{background:none;border:none;color:var(--accent);font-size:.78rem;font-weight:600;cursor:pointer;padding:4px;font-family:inherit;}
+.linklike.danger{color:var(--danger);}
+
+/* התראת "טוסט" קטנה וזמנית (למשל אישור העתקת קישור) - לא חוסמת ולא דורשת סגירה */
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);
+  background:#111B21;color:#fff;padding:11px 18px;border-radius:10px;
+  font-size:.85rem;font-weight:600;box-shadow:0 4px 18px rgba(0,0,0,.25);
+  opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;z-index:2000;
+  max-width:90vw;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+#cropStage{
+  position:relative;width:260px;height:260px;max-width:100%;margin:12px auto 4px;
+  border-radius:50%;overflow:hidden;background:#111;touch-action:none;cursor:grab;
+  box-shadow:0 0 0 3px var(--border);
+}
+#cropStage.dragging{cursor:grabbing;}
+#cropImg{position:absolute;top:0;left:0;user-select:none;pointer-events:none;}
+#cropZoom{width:100%;margin-top:10px;}
+
+.me-toggle-row{
+  display:flex;align-items:center;gap:8px;margin-top:14px;cursor:pointer;
+  font-size:.82rem;color:var(--text-dim);font-weight:500;
+}
+.me-toggle-row input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
+.me-toggle-row span{flex:1;}
+#fileInput{display:none;}
