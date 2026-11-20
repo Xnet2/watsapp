@@ -1,13 +1,11 @@
 // ===== סגירת חלונות: מקש Esc או לחיצה על הרקע הכהה =====
-// (חלון "בדיקה לפני שליחה" לא נסגר בלחיצה על הרקע, כדי לא לאבד הקלטה בטעות)
 const overlayClosers = {
   dialogOverlay: () => closeDialog(false),
   cropOverlay: () => { closeCropper(); contactPhotoInput.value = ''; },
   contactEditOverlay: closeContactEdit,
   contactsOverlay: closeContacts,
   guidesOverlay: closeGuides,
-  settingsOverlay: () => { if(getSystems().length) closeSettings(); },
-  recordPreviewOverlay: null
+  settingsOverlay: () => { if(getSystems().length) closeSettings(); }
 };
 Object.keys(overlayClosers).forEach(id => {
   const ov = document.getElementById(id);

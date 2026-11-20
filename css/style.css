@@ -173,14 +173,15 @@ svg{display:block;}
 header.bar{
   background:var(--header);
   color:var(--header-text);
-  padding:14px 16px;
-  padding-top:calc(14px + env(safe-area-inset-top));
+  /* גובה קבוע, כדי שהכותרת של רשימת המערכות (עם שורת משנה) ושל השיחה (בלי) יהיו בדיוק באותו גובה */
+  height:calc(62px + env(safe-area-inset-top));
+  padding:0 16px;
+  padding-top:env(safe-area-inset-top);
   display:flex;
   align-items:center;
   justify-content:space-between;
   gap:8px;
   flex-shrink:0;
-  min-height:64px;
 }
 header .title{display:flex;flex-direction:column;gap:2px;min-width:0;}
 header .title-row{display:flex;align-items:center;gap:8px;min-width:0;}
@@ -704,15 +705,33 @@ details.adv > label:first-of-type{margin-top:2px;}
   .guides-nav-item{flex-shrink:0;white-space:nowrap;}
 }
 
-/* ===== בדיקה לפני שליחה ===== */
-.preview-player{display:flex;align-items:center;gap:12px;margin-top:6px;}
-.preview-player .play-btn{flex-shrink:0;}
-.preview-wave-row{flex:1;min-width:0;display:flex;align-items:center;gap:8px;}
-.preview-progress{flex:1;height:6px;border-radius:3px;background:var(--wf-bar);cursor:pointer;position:relative;}
+/* ===== בדיקה לפני שליחה - בתוך שורת ההקלטה התחתונה (class="previewing" על #bottombar) ===== */
+#bottombar .pv{display:none;}
+#bottombar.previewing .pv{display:flex;}
+#bottombar.previewing .cmp{display:none !important;}
+#bottombar button.attach.danger{color:var(--danger);}
+#bottombar button.attach.danger:hover{background:var(--danger-soft);color:var(--danger);}
+.preview-player{
+  flex:1;min-width:0;align-items:center;gap:10px;
+  background:var(--surface-2);border-radius:24px;padding:4px 12px 4px 4px;height:44px;
+}
+.preview-player .play-btn{flex-shrink:0;width:36px;height:36px;}
+.preview-progress{flex:1;min-width:0;height:6px;border-radius:3px;background:var(--wf-bar);cursor:pointer;position:relative;}
 .preview-progress-fill{position:absolute;top:0;right:0;height:100%;width:0%;border-radius:3px;background:var(--accent);}
-#previewTimeLabel{min-width:32px;}
-.preview-btnrow{gap:8px;}
-.preview-btnrow button{padding:10px 4px;font-size:.82rem;}
+#previewTimeLabel{min-width:30px;text-align:left;}
+#previewSendBtn{
+  width:48px;height:48px;border-radius:50%;border:none;flex-shrink:0;
+  background:var(--primary);color:#fff;cursor:pointer;
+  align-items:center;justify-content:center;transition:transform .12s, background .15s;
+}
+#previewSendBtn:hover{background:var(--primary-hover);}
+#previewSendBtn:active{transform:scale(.92);}
+/* חץ השליחה מצביע שמאלה, כמו בוואטסאפ בעברית */
+#previewSendBtn svg{width:19px;height:19px;transform:scaleX(-1);}
+@media (max-width:360px){
+  #bottombar{gap:6px;padding-left:10px;padding-right:10px;}
+  #bottombar.previewing button.attach{width:36px;height:36px;}
+}
 
 /* ===== אנשי קשר ===== */
 #contactsList{display:flex;flex-direction:column;gap:6px;margin-top:6px;max-height:50vh;overflow-y:auto;}

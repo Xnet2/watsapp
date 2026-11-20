@@ -105,9 +105,9 @@ fileInput.onchange = () => {
   }
 };
 
-// ===== בדיקה לפני שליחה - נגן קטן לניגון ההקלטה/הקובץ שנבחר, עם אפשרות למחיקה,
-// הקלטה מחדש (או בחירת קובץ אחר), או שליחה בפועל. שום דבר לא מועלה לשרת עד לחיצה על "שליחה". =====
-const recordPreviewOverlay = document.getElementById('recordPreviewOverlay');
+// ===== בדיקה לפני שליחה - נפתחת בתוך שורת ההקלטה התחתונה (במקום חלונית קופצת): נגן קטן
+// להאזנה, מחיקה, הקלטה מחדש (או בחירת קובץ אחר), ושליחה. שום דבר לא מועלה לשרת עד "שליחה". =====
+const bottombarEl = document.getElementById('bottombar');
 const previewPlayBtn = document.getElementById('previewPlayBtn');
 const previewProgress = document.getElementById('previewProgress');
 const previewProgressFill = document.getElementById('previewProgressFill');
@@ -144,12 +144,15 @@ function showRecordPreview(blob, kind){
     previewTimeLabel.textContent = fmtTime(previewAudio.duration);
   });
 
-  previewRedoBtn.textContent = kind === 'mic' ? 'הקלטה מחדש' : 'בחירת קובץ אחר';
-  recordPreviewOverlay.classList.add('open');
+  const redoLabel = kind === 'mic' ? 'הקלטה מחדש' : 'בחירת קובץ אחר';
+  previewRedoBtn.title = redoLabel;
+  previewRedoBtn.setAttribute('aria-label', redoLabel);
+  bottombarEl.classList.add('previewing');
+  previewSendBtn.focus();
 }
 
 function closeRecordPreview(){
-  recordPreviewOverlay.classList.remove('open');
+  bottombarEl.classList.remove('previewing');
   if(previewAudio){ previewAudio.pause(); previewAudio = null; }
   if(previewObjectUrl){ URL.revokeObjectURL(previewObjectUrl); previewObjectUrl = null; }
   previewBlob = null;

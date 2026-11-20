@@ -105,14 +105,33 @@
     </div>
 
     <div id="bottombar">
-      <button class="attach" id="uploadBtn" title="העלאת קובץ שמע" aria-label="העלאת קובץ שמע">
+      <!-- מצב רגיל: העלאת קובץ / הקלטה -->
+      <button class="attach cmp" id="uploadBtn" title="העלאת קובץ שמע" aria-label="העלאת קובץ שמע">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
       </button>
       <input type="file" id="fileInput" accept="audio/*">
-      <div id="placeholderText">לחצו או החזיקו את המיקרופון כדי להקליט</div>
+      <div id="placeholderText" class="cmp">לחצו או החזיקו את המיקרופון כדי להקליט</div>
       <div id="recTimer"><span class="dot"></span><span id="recTimerText">00:00</span><span id="recHoldHint">שחררו כדי לסיים</span></div>
-      <button id="micBtn" title="הקלטה" aria-label="הקלטה">
+      <button id="micBtn" class="cmp" title="הקלטה" aria-label="הקלטה">
         <svg id="micIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </button>
+
+      <!-- מצב בדיקה לפני שליחה (אחרי הקלטה או בחירת קובץ): מחיקה, האזנה, הקלטה מחדש, שליחה -->
+      <button type="button" class="attach pv danger" id="previewCancelBtn" title="מחיקת ההקלטה" aria-label="מחיקת ההקלטה">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+      <div class="preview-player pv">
+        <button type="button" class="play-btn" id="previewPlayBtn" aria-label="האזנה להקלטה"></button>
+        <div class="preview-progress" id="previewProgress" tabindex="0" aria-label="מיקום בהקלטה">
+          <div class="preview-progress-fill" id="previewProgressFill"></div>
+        </div>
+        <span class="rec-time" id="previewTimeLabel">0:00</span>
+      </div>
+      <button type="button" class="attach pv" id="previewRedoBtn" title="הקלטה מחדש" aria-label="הקלטה מחדש">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+      </button>
+      <button type="button" class="pv" id="previewSendBtn" title="שליחה" aria-label="שליחה">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
       </button>
     </div>
   </main>
@@ -368,26 +387,6 @@
   </div>
 </div>
 
-<div id="recordPreviewOverlay" class="ov">
-  <div class="ov-box">
-    <h2>בדיקה לפני שליחה</h2>
-    <div class="sub">אפשר להאזין להקלטה, למחוק אותה, להקליט מחדש, או לשלוח.</div>
-    <div class="preview-player">
-      <button type="button" class="play-btn" id="previewPlayBtn" aria-label="נגן"></button>
-      <div class="preview-wave-row">
-        <div class="preview-progress" id="previewProgress" tabindex="0">
-          <div class="preview-progress-fill" id="previewProgressFill"></div>
-        </div>
-        <span class="rec-time" id="previewTimeLabel">0:00</span>
-      </div>
-    </div>
-    <div class="btnrow preview-btnrow">
-      <button class="secondary danger-text" id="previewCancelBtn">מחיקה</button>
-      <button class="secondary" id="previewRedoBtn">הקלטה מחדש</button>
-      <button class="primary" id="previewSendBtn">שליחה</button>
-    </div>
-  </div>
-</div>
 
 <!-- חלון הודעה/אישור כללי, במקום alert/confirm של הדפדפן -->
 <div id="dialogOverlay" class="ov dialog-ov">
