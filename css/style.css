@@ -340,10 +340,10 @@ header button.icon svg{width:18px;height:18px;}
 .rec-wave-row{display:flex;align-items:center;gap:6px;min-width:0;}
 .waveform{
   position:relative;
-  flex:1;height:24px;display:flex;align-items:center;gap:1px;cursor:pointer;
+  flex:1;height:24px;display:flex;align-items:center;justify-content:space-between;gap:1px;cursor:pointer;
   min-width:0;border-radius:4px;
 }
-.wf-bar{flex:1 1 0;min-width:1px;border-radius:2px;background:var(--wf-bar);}
+.wf-bar{flex:0 1 2.5px;width:2.5px;min-width:1.5px;border-radius:2px;background:var(--wf-bar);}
 .wf-bar.played{background:var(--accent);}
 .wf-thumb{
   position:absolute;

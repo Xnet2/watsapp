@@ -170,7 +170,7 @@ async function uploadToCloudinary(file){
   const data = await res.json();
   return data.secure_url;
 }
-const BAR_COUNT = 30;
+const BAR_COUNT = 40;
 
 const listEl = document.getElementById('list');
 const extLabel = document.getElementById('extLabel');
