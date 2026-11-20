@@ -706,7 +706,8 @@ details.adv > label:first-of-type{margin-top:2px;}
 }
 
 /* ===== בדיקה לפני שליחה - בתוך שורת ההקלטה התחתונה (class="previewing" על #bottombar) ===== */
-#bottombar .pv{display:none;}
+/* !important כי "#bottombar button.attach" (display:flex) חזק יותר ואחרת הכפתורים מוצגים תמיד */
+#bottombar:not(.previewing) .pv{display:none !important;}
 #bottombar.previewing .pv{display:flex;}
 #bottombar.previewing .cmp{display:none !important;}
 #bottombar button.attach.danger{color:var(--danger);}

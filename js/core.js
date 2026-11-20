@@ -258,6 +258,9 @@ function friendlyError(err){
     return { msg: 'אין חיבור לשרת. בדקו את החיבור לאינטרנט ונסו שוב.', detail: '' };
   }
   const detail = (err && err.message) || '';
+  if(/locked/i.test(detail)){
+    return { msg: 'ימות המשיח נעלו זמנית את הכניסה למערכת הזו. נסו שוב מאוחר יותר, או בדקו בממשק הניהול של ימות המשיח.', detail };
+  }
   if(/token|password|login|authoriz|not.?valid|יש להתחבר|סיסמ/i.test(detail)){
     return { msg: 'ימות המשיח לא אישרו את הכניסה. בדקו את מספר המערכת והסיסמה בהגדרות.', detail };
   }
