@@ -11,78 +11,126 @@
   gtag('config', 'G-2401KSLVNV');
 </script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>וואטסאפ פון</title>
+<meta name="theme-color" content="#008069" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#202C33" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="וואטסאפ פון">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='19' fill='%2325D366'/%3E%3Cpath d='M20 8c-6.6 0-12 5.4-12 12 0 2.1.55 4.1 1.6 5.9L8 32l6.3-1.6c1.7.9 3.6 1.4 5.7 1.4 6.6 0 12-5.4 12-12S26.6 8 20 8z' fill='%23fff'/%3E%3Cpath d='M20 10.2c-5.4 0-9.8 4.4-9.8 9.8 0 1.9.55 3.7 1.5 5.2l.3.45-1 3.6 3.7-.97.45.27c1.5.9 3.2 1.4 5 1.4a9.8 9.8 0 1 0-.15-19.75z' fill='%2325D366'/%3E%3Cpath d='M16.4 14.6c-.25-.55-.5-.56-.73-.57l-.62-.01c-.22 0-.57.08-.87.4-.3.32-1.13 1.1-1.13 2.7s1.16 3.13 1.32 3.35c.16.22 2.24 3.58 5.53 4.88 2.73 1.08 3.29.86 3.88.81.6-.06 1.9-.78 2.17-1.53.27-.75.27-1.4.19-1.53-.08-.14-.3-.22-.62-.38-.32-.16-1.9-.94-2.2-1.04-.3-.11-.51-.16-.73.16-.22.32-.84 1.04-1.03 1.25-.19.22-.38.24-.7.08-.32-.16-1.36-.5-2.6-1.6-.96-.86-1.6-1.91-1.79-2.23-.19-.32-.02-.49.14-.65.14-.14.32-.38.48-.57.16-.19.22-.32.32-.54.11-.22.06-.4-.03-.57-.08-.16-.7-1.76-.99-2.4z' fill='%23fff'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  // ערכת צבעים (אוטומטי/בהיר/כהה) - מוחלת כבר כאן, לפני הציור הראשון, כדי שלא יהיה הבהוב
+  try{ var t = localStorage.getItem('yemot_theme'); if(t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; }catch(e){}
+</script>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="logoSym" viewBox="0 0 40 40">
+    <circle cx="20" cy="20" r="19" fill="#25D366"/>
+    <path d="M20 8c-6.6 0-12 5.4-12 12 0 2.1.55 4.1 1.6 5.9L8 32l6.3-1.6c1.7.9 3.6 1.4 5.7 1.4 6.6 0 12-5.4 12-12S26.6 8 20 8z" fill="#fff"/>
+    <path d="M20 10.2c-5.4 0-9.8 4.4-9.8 9.8 0 1.9.55 3.7 1.5 5.2l.3.45-1 3.6 3.7-.97.45.27c1.5.9 3.2 1.4 5 1.4a9.8 9.8 0 1 0-.15-19.75z" fill="#25D366"/>
+    <path d="M16.4 14.6c-.25-.55-.5-.56-.73-.57l-.62-.01c-.22 0-.57.08-.87.4-.3.32-1.13 1.1-1.13 2.7s1.16 3.13 1.32 3.35c.16.22 2.24 3.58 5.53 4.88 2.73 1.08 3.29.86 3.88.81.6-.06 1.9-.78 2.17-1.53.27-.75.27-1.4.19-1.53-.08-.14-.3-.22-.62-.38-.32-.16-1.9-.94-2.2-1.04-.3-.11-.51-.16-.73.16-.22.32-.84 1.04-1.03 1.25-.19.22-.38.24-.7.08-.32-.16-1.36-.5-2.6-1.6-.96-.86-1.6-1.91-1.79-2.23-.19-.32-.02-.49.14-.65.14-.14.32-.38.48-.57.16-.19.22-.32.32-.54.11-.22.06-.4-.03-.57-.08-.16-.7-1.76-.99-2.4z" fill="#fff"/>
+  </symbol>
+</svg>
+
 <div id="app">
-  <header>
-    <div class="title">
-      <div class="title-row">
-        <button class="icon" id="backHomeBtn" title="רשימת המערכות" aria-label="רשימת המערכות" style="display:none;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
-        <span class="app-logo" aria-hidden="true">
-          <svg viewBox="0 0 40 40" width="26" height="26">
-            <circle cx="20" cy="20" r="19" fill="#25D366"/>
-            <path d="M20 8c-6.6 0-12 5.4-12 12 0 2.1.55 4.1 1.6 5.9L8 32l6.3-1.6c1.7.9 3.6 1.4 5.7 1.4 6.6 0 12-5.4 12-12S26.6 8 20 8z" fill="#fff"/>
-            <path d="M20 10.2c-5.4 0-9.8 4.4-9.8 9.8 0 1.9.55 3.7 1.5 5.2l.3.45-1 3.6 3.7-.97.45.27c1.5.9 3.2 1.4 5 1.4a9.8 9.8 0 1 0-.15-19.75z" fill="#25D366"/>
-            <path d="M16.4 14.6c-.25-.55-.5-.56-.73-.57l-.62-.01c-.22 0-.57.08-.87.4-.3.32-1.13 1.1-1.13 2.7s1.16 3.13 1.32 3.35c.16.22 2.24 3.58 5.53 4.88 2.73 1.08 3.29.86 3.88.81.6-.06 1.9-.78 2.17-1.53.27-.75.27-1.4.19-1.53-.08-.14-.3-.22-.62-.38-.32-.16-1.9-.94-2.2-1.04-.3-.11-.51-.16-.73.16-.22.32-.84 1.04-1.03 1.25-.19.22-.38.24-.7.08-.32-.16-1.36-.5-2.6-1.6-.96-.86-1.6-1.91-1.79-2.23-.19-.32-.02-.49.14-.65.14-.14.32-.38.48-.57.16-.19.22-.32.32-.54.11-.22.06-.4-.03-.57-.08-.16-.7-1.76-.99-2.4z" fill="#fff"/>
-          </svg>
-        </span>
-        <b id="headerTitle">וואטסאפ פון</b>
+  <!-- רשימת המערכות: במחשב מוצגת תמיד בצד, בטלפון כמסך נפרד -->
+  <aside id="sidebar">
+    <header class="bar">
+      <div class="title">
+        <div class="title-row">
+          <span class="app-logo" aria-hidden="true"><svg width="26" height="26"><use href="#logoSym"/></svg></span>
+          <b>וואטסאפ פון</b>
+        </div>
+        <span id="homeCountLabel"></span>
       </div>
-      <span id="extLabel"></span>
-    </div>
-    <div class="actions">
-      <button class="icon" id="homeAddBtn" title="הוספת מערכת" aria-label="הוספת מערכת" style="display:none;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </button>
-      <button class="icon" id="refreshBtn" title="רענון" aria-label="רענון">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-      </button>
-      <button class="icon" id="helpFab" title="הדרכות ועזרה" aria-label="הדרכות ועזרה">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      </button>
-      <button class="icon" id="contactsBtn" title="אנשי קשר" aria-label="אנשי קשר">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      </button>
-      <button class="icon" id="settingsBtn" title="הגדרות" aria-label="הגדרות">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-      </button>
-    </div>
-  </header>
-
-  <div id="list">
-    <div class="status-line" id="statusLine">פותחים הגדרות כדי להתחבר…</div>
-  </div>
-
-  <div id="homeScreen">
+      <div class="actions">
+        <button class="icon" id="homeAddBtn" title="הוספת מערכת" aria-label="הוספת מערכת">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <button class="icon" id="helpFab" title="הדרכות ועזרה" aria-label="הדרכות ועזרה">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </button>
+      </div>
+    </header>
     <div id="homeListEl"></div>
-  </div>
+  </aside>
 
-  <div id="bottombar">
-    <button class="attach" id="uploadBtn" title="העלאת קובץ שמע" aria-label="העלאת קובץ שמע">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-    </button>
-    <input type="file" id="fileInput" accept="audio/*">
-    <div id="placeholderText">לחצו על המיקרופון כדי להקליט הודעה חדשה</div>
-    <div id="recTimer"><span class="dot"></span><span id="recTimerText">00:00</span></div>
-    <button id="micBtn" title="הקלטה" aria-label="הקלטה">
-      <svg id="micIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-    </button>
-  </div>
+  <main id="chat">
+    <header class="bar">
+      <div class="title">
+        <div class="title-row">
+          <button class="icon" id="backHomeBtn" title="רשימת המערכות" aria-label="רשימת המערכות" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <span class="app-logo" id="chatLogo" aria-hidden="true"><svg width="26" height="26"><use href="#logoSym"/></svg></span>
+          <b id="headerTitle">וואטסאפ פון</b>
+        </div>
+        <span id="extLabel"></span>
+      </div>
+      <div class="actions">
+        <button class="icon" id="searchBtn" title="חיפוש" aria-label="חיפוש">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+        <button class="icon" id="refreshBtn" title="רענון" aria-label="רענון">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </button>
+        <button class="icon" id="contactsBtn" title="אנשי קשר" aria-label="אנשי קשר">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </button>
+        <button class="icon" id="settingsBtn" title="הגדרות" aria-label="הגדרות">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div id="searchBar" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" id="searchInput" placeholder="חיפוש לפי שם, מספר או תמלול" dir="auto" autocomplete="off">
+      <button type="button" class="search-close" id="searchCloseBtn" aria-label="סגירת החיפוש">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div id="list" aria-live="polite">
+      <div class="status-line" id="statusLine">פותחים הגדרות כדי להתחבר…</div>
+    </div>
+
+    <div id="bottombar">
+      <button class="attach" id="uploadBtn" title="העלאת קובץ שמע" aria-label="העלאת קובץ שמע">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+      </button>
+      <input type="file" id="fileInput" accept="audio/*">
+      <div id="placeholderText">לחצו או החזיקו את המיקרופון כדי להקליט</div>
+      <div id="recTimer"><span class="dot"></span><span id="recTimerText">00:00</span><span id="recHoldHint">שחררו כדי לסיים</span></div>
+      <button id="micBtn" title="הקלטה" aria-label="הקלטה">
+        <svg id="micIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </button>
+    </div>
+  </main>
 </div>
 
 <div id="settingsOverlay" class="ov">
   <div class="ov-box">
-    <h2 id="settingsTitle">חיבור למערכת ימות המשיח</h2>
+    <div class="ov-head">
+      <h2 id="settingsTitle">חיבור למערכת ימות המשיח</h2>
+      <button type="button" class="ov-x" id="settingsCloseX" aria-label="סגירה">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="sub" id="settingsIntro">כדי להתחיל צריך רק את מספר המערכת והסיסמה של ימות המשיח.</div>
+    <button type="button" class="help-link" id="openGuidesFromSettings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      איך ממלאים כל שדה? הדרכות
+    </button>
 
     <div id="settingsSystemsSection" style="display:none;">
       <div class="settings-systems-title">המערכות שלי</div>
@@ -97,35 +145,52 @@
     <input type="text" id="labelInput" placeholder="לדוגמה: הבית, העסק" dir="auto">
 
     <label for="tokenInput">מספר מערכת וסיסמה (בפורמט מספר:סיסמה)</label>
-    <input type="text" id="tokenInput" placeholder="0771234567:1234" dir="ltr">
+    <input type="text" id="tokenInput" placeholder="0771234567:1234" dir="ltr" autocomplete="off">
 
     <label for="extInput">מספר שלוחה</label>
     <input type="text" id="extInput" placeholder="1" dir="ltr" value="1">
 
-    <label for="tzintukListInput">שם רשימת צינתוקים</label>
-    <input type="text" id="tzintukListInput" placeholder="אופציונלי" dir="ltr">
-    <label class="me-toggle-row" for="tzIncomingInput">
-      <input type="checkbox" id="tzIncomingInput">
-      <span>במכשיר הזה: לצנתק גם כשמגיעה הודעה מהטלפון</span>
-    </label>
-    <div class="hint">כדאי להפעיל במכשיר אחד בלבד, אחרת הרשימה תקבל כמה צינתוקים על אותה הודעה. הודעה שנשלחת מהאתר תמיד מצנתקת מהמכשיר ששלח אותה.</div>
+    <div class="conn-status" id="connStatus" hidden></div>
 
-    <label for="contactsSourceInput">מקור אנשי קשר</label>
-    <select id="contactsSourceInput">
-      <option value="sheetdb">שירות חיצוני - SheetDB</option>
-      <option value="appsscript">סקריפט Google Sheets עצמאי (Apps Script)</option>
+    <details class="adv" id="advSettings">
+      <summary>הגדרות נוספות: צינתוק, אנשי קשר ותמלול</summary>
+      <label for="tzintukListInput">שם רשימת צינתוקים</label>
+      <input type="text" id="tzintukListInput" placeholder="אופציונלי" dir="ltr">
+      <label class="check-row" for="tzIncomingInput">
+        <input type="checkbox" id="tzIncomingInput">
+        <span>במכשיר הזה: לצנתק גם כשמגיעה הודעה מהטלפון</span>
+      </label>
+      <div class="hint">כדאי להפעיל במכשיר אחד בלבד, אחרת הרשימה תקבל כמה צינתוקים על אותה הודעה. הודעה שנשלחת מהאתר תמיד מצנתקת מהמכשיר ששלח אותה.</div>
+
+      <label for="contactsSourceInput">מקור אנשי קשר</label>
+      <select id="contactsSourceInput">
+        <option value="sheetdb">שירות חיצוני - SheetDB</option>
+        <option value="appsscript">סקריפט Google Sheets עצמאי (Apps Script)</option>
+      </select>
+      <label for="contactsApiInput">כתובת API לאנשי קשר</label>
+      <input type="text" id="contactsApiInput" placeholder="https://sheetdb.io/api/v1/xxxxxxxxxx" dir="ltr">
+
+      <label for="speechApiKeyInput">מפתח Groq API (חינם, לתמלול הודעות)</label>
+      <input type="text" id="speechApiKeyInput" placeholder="אופציונלי - gsk_..." dir="ltr" autocomplete="off">
+    </details>
+
+    <div class="settings-group-title">העדפות במכשיר הזה</div>
+    <label for="themeInput">ערכת צבעים</label>
+    <select id="themeInput">
+      <option value="auto">אוטומטי (לפי המכשיר)</option>
+      <option value="light">בהיר</option>
+      <option value="dark">כהה</option>
     </select>
-    <label for="contactsApiInput">כתובת API לאנשי קשר</label>
-    <input type="text" id="contactsApiInput" placeholder="https://sheetdb.io/api/v1/xxxxxxxxxx" dir="ltr">
-
-    <label for="speechApiKeyInput">מפתח Groq API (חינם, לתמלול הודעות)</label>
-    <input type="text" id="speechApiKeyInput" placeholder="אופציונלי - gsk_..." dir="ltr">
+    <label class="check-row" for="notifyInput">
+      <input type="checkbox" id="notifyInput">
+      <span>התראה בדפדפן כשמגיעה הודעה חדשה והאתר ברקע</span>
+    </label>
 
     <div class="btnrow">
       <button class="secondary" id="closeSettingsBtn">סגירה</button>
       <button class="primary" id="saveSettingsBtn">שמירה וטעינה</button>
     </div>
-    <div class="btnrow">
+    <div class="btnrow linkrow">
       <button type="button" class="linklike" id="addAnotherSystemBtn">הוספת מערכת נוספת</button>
       <button type="button" class="linklike danger" id="deleteSystemBtn">מחיקת מערכת זו</button>
     </div>
@@ -142,13 +207,13 @@
   </div>
 </div>
 
-<div id="toastEl" class="toast"></div>
+<div id="toastEl" class="toast" role="status"></div>
 
 <div id="guidesOverlay" class="ov">
   <div class="ov-box guides-box">
     <div class="guides-header">
       <h2>הדרכות</h2>
-      <button type="button" class="guides-close-x" id="closeGuidesBtn" aria-label="סגירה">
+      <button type="button" class="ov-x" id="closeGuidesBtn" aria-label="סגירה">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
@@ -211,6 +276,7 @@
         <div class="guide-panel" id="guidePanelTzintuk">
           <h3>צינתוק לרשימה <span class="guide-req optional">אופציונלי</span></h3>
           <p class="wizard-text">אפשר להגדיר שבכל הקלטה חדשה תישלח אוטומטית שיחת צינתוק לכל המספרים ברשימת צינתוקים שהגדרתם בימות המשיח, תחת "ניהול רשימות צינתוקים במודול צינתוקים חינמיים" בממשק הניהול. את שם/מספר הרשימה מזינים בשדה "שם רשימת צינתוקים" בהגדרות.</p>
+          <p class="wizard-text">הודעה שנשלחת מהאתר מצנתקת מהמכשיר ששלח אותה. כדי שגם הודעות שמוקלטות בטלפון יצנתקו, מסמנים "לצנתק גם כשמגיעה הודעה מהטלפון" במכשיר אחד שהאתר פתוח בו.</p>
           <a class="wizard-link" href="https://www.call2all.co.il" target="_blank" rel="noopener">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             פתיחת ממשק הניהול של ימות המשיח
@@ -238,7 +304,12 @@
 
 <div id="contactsOverlay" class="ov">
   <div class="ov-box">
-    <h2>אנשי קשר</h2>
+    <div class="ov-head">
+      <h2>אנשי קשר</h2>
+      <button type="button" class="ov-x" id="contactsCloseX" aria-label="סגירה">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
     <div class="sub">שם ותמונה יוצגו אוטומטית בהקלטות שמזוהות מהמספר שלהם. אנשי הקשר נשמרים בגיליון ה-Google Sheets הפרטי שהוגדר בהגדרות, ונטענים לפי הטוקן - כך שהם משותפים לכל מכשיר שמתחבר עם אותו טוקן, אבל לא נגישים למי שמפעיל את האתר עם גיליון אחר.</div>
     <div id="contactsList"></div>
     <div class="btnrow">
@@ -269,7 +340,7 @@
     <label for="contactPhoneInput">מספר טלפון</label>
     <input type="text" id="contactPhoneInput" placeholder="050-1234567" dir="ltr">
 
-    <label class="me-toggle-row" for="contactIsMeInput">
+    <label class="check-row" for="contactIsMeInput">
       <input type="checkbox" id="contactIsMeInput">
       <span>זה אני (ההודעות שלי יוצגו בצד שמאל)</span>
     </label>
@@ -314,6 +385,19 @@
       <button class="secondary danger-text" id="previewCancelBtn">מחיקה</button>
       <button class="secondary" id="previewRedoBtn">הקלטה מחדש</button>
       <button class="primary" id="previewSendBtn">שליחה</button>
+    </div>
+  </div>
+</div>
+
+<!-- חלון הודעה/אישור כללי, במקום alert/confirm של הדפדפן -->
+<div id="dialogOverlay" class="ov dialog-ov">
+  <div class="ov-box dialog-box" role="alertdialog" aria-modal="true" aria-labelledby="dialogTitle">
+    <h2 id="dialogTitle"></h2>
+    <div class="dialog-msg" id="dialogMsg"></div>
+    <input type="text" id="dialogCopy" readonly dir="ltr" hidden>
+    <div class="btnrow">
+      <button class="secondary" id="dialogCancel">ביטול</button>
+      <button class="primary" id="dialogOk">אישור</button>
     </div>
   </div>
 </div>

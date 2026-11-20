@@ -55,13 +55,77 @@ function playUploadChime(){
   }catch(err){ /* אם הדפדפן חוסם אודיו ללא אינטראקציה - פשוט מדלגים על הצליל */ }
 }
 
-function setStatus(msg, isError){
+// opts: {detail: טקסט טכני קטן, actionLabel + onAction: כפתור פעולה (למשל "לנסות שוב")}
+function setStatus(msg, isError, opts){
+  opts = opts || {};
   if(activeAudio){ activeAudio.pause(); activeAudio = null; activePlayBtn = null; activeSetPlayed = null; }
+  activeRowEl = null;
   listEl.innerHTML = '';
   const div = document.createElement('div');
   div.className = 'status-line' + (isError ? ' error' : '');
   div.textContent = msg;
+  if(opts.detail){
+    const d = document.createElement('span');
+    d.className = 'status-detail';
+    d.textContent = opts.detail;
+    div.appendChild(d);
+  }
+  if(opts.actionLabel){
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'status-action';
+    b.textContent = opts.actionLabel;
+    b.onclick = opts.onAction;
+    div.appendChild(document.createElement('br'));
+    div.appendChild(b);
+  }
   listEl.appendChild(div);
+}
+
+// שלד טעינה בצורת בועות, במקום הטקסט "טוען הקלטות…"
+function showSkeleton(){
+  if(activeAudio){ activeAudio.pause(); activeAudio = null; activePlayBtn = null; activeSetPlayed = null; }
+  activeRowEl = null;
+  listEl.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'status-line skeleton-wrap';
+  wrap.style.cssText = 'padding:0;display:flex;flex-direction:column;gap:8px;';
+  [0, 0, 1, 0, 1].forEach(mine => {
+    const r = document.createElement('div');
+    r.className = 'skel-row' + (mine ? ' mine' : '');
+    r.innerHTML = '<div class="skel-bubble"><div class="skel-circle"></div><div class="skel-line"></div></div>';
+    wrap.appendChild(r);
+  });
+  wrap.setAttribute('aria-label', 'טוען הקלטות');
+  listEl.appendChild(wrap);
+}
+
+// תאריך ההודעה: משם הקובץ (Phone-...-Date-... / recording-...) או משדה תאריך שהשרת מחזיר
+function fileDateInfo(file){
+  const p = parsePhoneAndDate(file.name);
+  if(p) return parseMsgDate(p.date);
+  return parseMsgDate(extractDateLabel(file)) || parseMsgDate(file.name);
+}
+
+// מוסיף שורת הודעה לרשימה, עם מפריד תאריך ("היום", "אתמול"...) כשהיום מתחלף
+let lastDayKey = null;
+function appendRecRow(row){
+  if(row._dayKey && row._dayKey !== lastDayKey){
+    const sep = document.createElement('div');
+    sep.className = 'day-sep';
+    sep.textContent = dayLabel(row._date);
+    listEl.appendChild(sep);
+    lastDayKey = row._dayKey;
+  }
+  listEl.appendChild(row);
+}
+
+// מסמן שההודעה האחרונה ברשימה נראתה (בשביל מונה "לא נקראו" ברשימת המערכות)
+function markListSeen(files){
+  if(!files || !files.length || document.hidden) return;
+  const id = getActiveSystemId();
+  setLastSeen(id, files[files.length - 1].name);
+  if(typeof refreshHomeRow === 'function' && isWide()) refreshHomeRow(id);
 }
 
 function extPath(ext){
@@ -140,12 +204,19 @@ async function fetchFileList(token, ext){
   if(data.responseStatus !== 'OK') throw new Error(data.message || data.responseStatus);
 
   let files = (data.files || []).filter(f => (f.fileType === 'AUDIO' || f.fileType === 'TTS') && isRealRecordingName(f.name));
-  files.sort((a,b) => {
-    const na = parseInt((a.name || '').match(/\d+/), 10);
-    const nb = parseInt((b.name || '').match(/\d+/), 10);
-    if(!isNaN(na) && !isNaN(nb)) return na - nb;
-    return (a.name||'').localeCompare(b.name||'');
+  // מיון כרונולוגי: לפי תאריך כשהוא ידוע לשני הקבצים, אחרת לפי המספר הרץ בשם.
+  // (בעבר מוין לפי המספר הראשון בשם - ובקבצי Phone-...-Date-... זה מספר הטלפון ולא התאריך)
+  const dated = files.map(f => {
+    const info = fileDateInfo(f);
+    const base = (f.name || '').replace(/\.[^.]+$/, '');
+    return { f, t: info ? info.date.getTime() : null, n: /^\d+$/.test(base) ? parseInt(base, 10) : parseInt((base.match(/\d+/) || [])[0], 10) };
   });
+  dated.sort((a, b) => {
+    if(a.t !== null && b.t !== null && a.t !== b.t) return a.t - b.t;
+    if(!isNaN(a.n) && !isNaN(b.n) && a.n !== b.n) return a.n - b.n;
+    return (a.f.name || '').localeCompare(b.f.name || '');
+  });
+  files = dated.map(d => d.f);
 
   return files;
 }
@@ -165,34 +236,45 @@ async function loadRecordings(){
     return;
   }
 
-  setStatus('טוען הקלטות…');
+  showSkeleton();
 
   let files;
   try{
     files = await fetchFileList(token, ext);
   }catch(err){
     if(gen !== listGeneration) return;
-    setStatus(
-      'שגיאה בטעינת ההקלטות.\n' +
-      'ייתכן שזו חסימת CORS של שרת ימות המשיח, או בעיית רשת.\n' +
-      'פרטים טכניים: ' + err.message,
-      true
-    );
+    const fe = friendlyError(err);
+    setStatus(fe.msg, true, { detail: fe.detail, actionLabel: 'לנסות שוב', onAction: () => loadRecordings() });
     return;
   }
   if(gen !== listGeneration) return;
 
-  if(files.length === 0){
-    setStatus('אין הקלטות להצגה בשלוחה ' + ext + '.');
-    return;
+  // בפעם הראשונה שנכנסים למערכת - כל ההודעות הקיימות נחשבות "נשמעו", כדי שלא הכל יסומן כחדש
+  if(!loadPlayedSet()){
+    playedSet = new Set(files.map(f => f.name));
+    savePlayedSet();
   }
 
   listEl.innerHTML = '';
+  activeRowEl = null;
   renderedFileNames = new Set();
+  lastDayKey = null;
+
+  if(files.length === 0){
+    // לא status-line: כך הבדיקה ברקע ממשיכה לרוץ ותציג הודעה חדשה ברגע שתגיע
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.textContent = 'אין עדיין הודעות בשלוחה ' + ext + '.\nאפשר להקליט את הראשונה עם המיקרופון למטה.';
+    listEl.appendChild(empty);
+    return;
+  }
+
   for(const file of files){
-    listEl.appendChild(buildRecItem(file, token, ext));
+    appendRecRow(buildRecItem(file, token, ext));
     renderedFileNames.add(file.name);
   }
+  applySearchFilter();
+  markListSeen(files);
   // פתיחה בסוף הרשימה - ההקלטה האחרונה תמיד גלויה
   listEl.scrollTop = listEl.scrollHeight;
 }
@@ -228,10 +310,14 @@ async function appendNewRecordings(onNewFiles){
 
   const wasAtBottom = (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) < 40;
 
+  const emptyState = listEl.querySelector('.empty-state');
+  if(emptyState) emptyState.remove();
   for(const file of newFiles){
-    listEl.appendChild(buildRecItem(file, token, ext));
+    appendRecRow(buildRecItem(file, token, ext));
     renderedFileNames.add(file.name);
   }
+  applySearchFilter();
+  markListSeen(files);
 
   if(wasAtBottom){
     listEl.scrollTop = listEl.scrollHeight;
@@ -257,6 +343,7 @@ async function pollForNewRecordings(){
 
     // הקלטות שהתגלו כאן לא הועלו מהדפדפן הזה - משמיעים צליל כניסת הודעה חדשה (שני טונים).
     playChime();
+    notifyNewMessages(newFiles);
     // צינתוק רק על הודעות שהגיעו מהטלפון: הודעה שהועלתה מהאתר (יש לה שיוך שולח) כבר
     // צונתקה ע"י המכשיר ששלח אותה. ורק אם המכשיר הזה מוגדר לצנתק על הודעות נכנסות.
     const fromPhone = newFiles.filter(f => !getRecordingAttribution(f.name));
@@ -268,6 +355,25 @@ async function pollForNewRecordings(){
     console.warn('בדיקת הקלטות חדשות נכשלה:', err.message);
   }finally{
     isPolling = false;
+  }
+}
+
+// התראת דפדפן על הודעות חדשות - רק כשהאתר ברקע, ורק אם אושרה בהגדרות
+function notifyNewMessages(files){
+  if(!document.hidden || !getNotifyEnabled()) return;
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  const sys = getActiveSystem();
+  const names = files.map(f => resolveFileSender(f, getContacts()).displayName);
+  const body = files.length === 1 ? ('הודעה קולית חדשה: ' + names[0]) : (files.length + ' הודעות קוליות חדשות');
+  const title = systemLabel(sys);
+  const opts = { body, tag: 'sys-' + getActiveSystemId(), icon: 'icons/icon-192.png', renotify: true, data: { url: location.href } };
+  if(navigator.serviceWorker && navigator.serviceWorker.controller){
+    navigator.serviceWorker.ready.then(reg => reg.showNotification(title, opts)).catch(() => {});
+  } else {
+    try{
+      const n = new Notification(title, opts);
+      n.onclick = () => { window.focus(); n.close(); };
+    }catch(err){ /* בחלק מהדפדפנים בטלפון אפשר רק דרך service worker */ }
   }
 }
 
@@ -381,6 +487,55 @@ async function transcribeAudioUrl(url, fileName){
   return text || '(לא זוהה טקסט בהקלטה)';
 }
 
+// ההודעה שמתנגנת כרגע (בשביל סימון "active" שמציג את כפתור המהירות)
+let activeRowEl = null;
+
+function closeAllTooltips(){
+  document.querySelectorAll('.voice-tooltip.show').forEach(t => t.classList.remove('show'));
+}
+document.addEventListener('click', closeAllTooltips);
+listEl.addEventListener('scroll', closeAllTooltips, { passive: true });
+
+// ===== חיפוש לפי שם השולח, מספר הטלפון או טקסט התמלול =====
+const searchBar = document.getElementById('searchBar');
+const searchInput = document.getElementById('searchInput');
+function applySearchFilter(){
+  const q = searchInput.value.trim().toLowerCase();
+  let shown = 0;
+  listEl.querySelectorAll('.rec-row').forEach(r => {
+    const text = r._getSearchText ? r._getSearchText().toLowerCase() : '';
+    const match = !q || text.includes(q) || (/^\d+$/.test(q) && text.replace(/\D/g, '').includes(q));
+    r.classList.toggle('search-hidden', !match);
+    if(match) shown++;
+  });
+  listEl.querySelectorAll('.day-sep').forEach(s => s.classList.toggle('search-hidden', !!q));
+  let empty = listEl.querySelector('.search-empty');
+  if(q && shown === 0 && listEl.querySelector('.rec-row')){
+    if(!empty){
+      empty = document.createElement('div');
+      empty.className = 'search-empty';
+      listEl.appendChild(empty);
+    }
+    empty.textContent = 'לא נמצאו הודעות. החיפוש כולל רק הודעות שכבר תומללו.';
+  } else if(empty){
+    empty.remove();
+  }
+}
+function openSearch(){
+  searchBar.hidden = false;
+  searchInput.focus();
+}
+function closeSearch(){
+  if(searchBar.hidden) return;
+  searchBar.hidden = true;
+  searchInput.value = '';
+  applySearchFilter();
+}
+document.getElementById('searchBtn').onclick = () => { if(searchBar.hidden) openSearch(); else closeSearch(); };
+document.getElementById('searchCloseBtn').onclick = closeSearch;
+searchInput.addEventListener('input', applySearchFilter);
+searchInput.addEventListener('keydown', (e) => { if(e.key === 'Escape'){ e.stopPropagation(); closeSearch(); } });
+
 const waveformObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if(entry.isIntersecting && entry.target._loadWaveform){
@@ -435,6 +590,17 @@ function buildRecItem(file, token, ext){
   }
   const displayName = contact ? contact.name : (matchedPhone || 'לא מזוהה');
 
+  // תאריך ושעה: למפריד היום ברשימה, לשעה הקטנה בתוך הבועה ולחלונית הפרטים
+  const msgDateInfo = fileDateInfo(file);
+  row._date = msgDateInfo ? msgDateInfo.date : null;
+  row._dayKey = row._date ? dayKeyOf(row._date) : null;
+  if(msgDateInfo){
+    dateOnly = fmtDateShort(msgDateInfo.date);
+    timeOnly = msgDateInfo.hasTime ? fmtClock(msgDateInfo.date) : '';
+  }
+  if(!row.classList.contains('rec-mine') && !isPlayed(file.name)) row.classList.add('unplayed');
+  row._getSearchText = () => [displayName, matchedPhone || '', getCachedTranscript(file.name) || ''].join(' ');
+
   const bubble = document.createElement('div');
   bubble.className = 'rec-bubble';
 
@@ -475,7 +641,7 @@ function buildRecItem(file, token, ext){
       } else if(i === cut && frac > 0){
         b.classList.remove('played');
         const pct = (frac*100).toFixed(1) + '%';
-        b.style.background = 'linear-gradient(to left, var(--accent) ' + pct + ', #D1D7DB ' + pct + ')';
+        b.style.background = 'linear-gradient(to left, var(--accent) ' + pct + ', var(--wf-bar) ' + pct + ')';
       } else {
         b.classList.remove('played');
         b.style.background = '';
@@ -489,7 +655,34 @@ function buildRecItem(file, token, ext){
   timeLabel.textContent = '0:00';
 
   waveRow.appendChild(waveform);
-  waveRow.appendChild(timeLabel);
+
+  // כפתור מהירות (1x / 1.5x / 2x) - מוצג רק בהודעה שמתנגנת כרגע
+  const speedChip = document.createElement('button');
+  speedChip.type = 'button';
+  speedChip.className = 'speed-chip';
+  speedChip.textContent = fmtRate(getPlaybackRate());
+  speedChip.setAttribute('aria-label', 'מהירות ניגון');
+  speedChip.onclick = (e) => {
+    e.stopPropagation();
+    const r = cyclePlaybackRate();
+    document.querySelectorAll('.speed-chip').forEach(c => { c.textContent = fmtRate(r); });
+    if(audio) audio.playbackRate = r;
+  };
+  waveRow.appendChild(speedChip);
+
+  // שורה קטנה מתחת לגל: משך ההקלטה, ושעת השליחה (אם ידועה)
+  const metaRow = document.createElement('div');
+  metaRow.className = 'rec-meta';
+  metaRow.appendChild(timeLabel);
+  const clockLabel = document.createElement('span');
+  clockLabel.className = 'rec-clock';
+  clockLabel.textContent = timeOnly || '';
+  metaRow.appendChild(clockLabel);
+
+  const waveCol = document.createElement('div');
+  waveCol.className = 'rec-wave-col';
+  waveCol.appendChild(waveRow);
+  waveCol.appendChild(metaRow);
 
   // תמונת השולח משובצת בתוך הבועה עצמה, עם תג מיקרופון קטן על פינתה - בדיוק כמו הודעה קולית בוואטסאפ.
   // מעבר עכבר על התמונה חושף חלונית קטנה עם השם, התאריך, השעה ומשך ההקלטה.
@@ -562,10 +755,17 @@ function buildRecItem(file, token, ext){
   avatarWrap.addEventListener('mouseleave', () => {
     tooltip.classList.remove('show');
   });
+  // בטלפון אין ריחוף - הקשה על התמונה פותחת/סוגרת את חלונית הפרטים
+  avatar.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const wasOpen = tooltip.classList.contains('show');
+    closeAllTooltips();
+    if(!wasOpen){ positionVoiceTooltip(); tooltip.classList.add('show'); }
+  });
 
   bubble.appendChild(avatarWrap);
   bubble.appendChild(playBtn);
-  bubble.appendChild(waveRow);
+  bubble.appendChild(waveCol);
   col.appendChild(bubble);
 
   // ===== תמלול הודעה - אזור מתחת לבועה, לפי דרישה (כפתור "תמלל"), עם קאש ואפשרות הרחבה =====
@@ -606,6 +806,7 @@ function buildRecItem(file, token, ext){
         const text = await transcribeAudioUrl(src, file.name);
         setCachedTranscript(file.name, text);
         renderTranscriptBox(text);
+        applySearchFilter();
       }catch(err){
         transcriptWrap.innerHTML = '';
         const errBox = document.createElement('div');
@@ -691,6 +892,8 @@ function buildRecItem(file, token, ext){
     // preload='auto' (ולא רק 'metadata') - כדי שהדפדפן יתחיל להוריד את כל קובץ ההקלטה ברקע
     // כבר מרגע שהיא נכנסת לתצוגה, ולא רק כשלוחצים "נגן".
     audio.preload = 'auto';
+    // מחזירים את המהירות שנבחרה בכל התחלת ניגון (החלפת מקור ל-Blob מאפסת אותה)
+    audio.addEventListener('play', () => { audio.playbackRate = getPlaybackRate(); });
 
     // אם הקובץ עדיין לא היה מוכן כ-Blob ברגע שנוצר האלמנט (התחלנו לנגן מה-streaming URL כדי
     // שההפעלה תרגיש מיידית) - ברגע שההורדה המלאה לצורך הגל מסתיימת, מחליפים את המקור ל-Blob
@@ -704,7 +907,7 @@ function buildRecItem(file, token, ext){
         const onReady = () => {
           audio.removeEventListener('loadedmetadata', onReady);
           audio.currentTime = t;
-          if(wasPlaying) audio.play();
+          if(wasPlaying) audio.play().catch(() => {});
         };
         audio.addEventListener('loadedmetadata', onReady);
         audio.src = result.blobUrl;
@@ -727,12 +930,19 @@ function buildRecItem(file, token, ext){
     });
     audio.addEventListener('ended', () => {
       playBtn.innerHTML = ICON_PLAY;
+      row.classList.remove('active');
+      if(activeRowEl === row) activeRowEl = null;
       setPlayedRatio(0);
       timeLabel.textContent = fmtRemaining(0, audio.duration);
       if(activeAudio === audio){ activeAudio = null; activePlayBtn = null; activeSetPlayed = null; }
 
       // מעבר אוטומטי להקלטה הבאה ברשימה, עם צליל קטן קודם - כמו בוואטסאפ.
-      const next = row.nextElementSibling;
+      // מדלגים על מפרידי תאריך ועל הודעות שמוסתרות בחיפוש
+      let next = row.nextElementSibling;
+      while(next && (!next.classList.contains('rec-row') || next.classList.contains('search-hidden'))){
+        if(next.classList.contains('rec-row') || next.classList.contains('day-sep')) next = next.nextElementSibling;
+        else { next = null; }
+      }
       if(next && next.classList && next.classList.contains('rec-row')){
         playChime();
         setTimeout(() => {
@@ -751,8 +961,15 @@ function buildRecItem(file, token, ext){
       if(activePlayBtn) activePlayBtn.innerHTML = ICON_PLAY;
       if(activeSetPlayed) activeSetPlayed(0);
     }
+    if(activeRowEl && activeRowEl !== row) activeRowEl.classList.remove('active');
+    activeRowEl = row;
+    row.classList.add('active');
+    if(row.classList.contains('unplayed')){
+      row.classList.remove('unplayed');
+      markPlayed(file.name);
+    }
     if(audio.paused){
-      audio.play();
+      audio.play().catch(() => {});
       playBtn.innerHTML = ICON_PAUSE;
       activeAudio = audio;
       activePlayBtn = playBtn;
@@ -799,7 +1016,7 @@ function buildRecItem(file, token, ext){
           audio.removeEventListener('seeked', resumePlayback);
           audio.removeEventListener('timeupdate', resumePlayback);
           if(myToken !== seekToken) return; // בינתיים בוצע seek נוסף - מתעלמים מהישן
-          audio.play();
+          audio.play().catch(() => {});
           if(waveRafId === null) waveRafId = requestAnimationFrame(stepWaveform);
         };
         audio.addEventListener('seeked', resumePlayback);
@@ -814,9 +1031,24 @@ function buildRecItem(file, token, ext){
   };
 
 
+  // מקלדת: רווח/Enter מנגן ועוצר, חיצים מריצים 5 שניות (שמאלה = קדימה, כמו כיוון הגל)
+  waveform.addEventListener('keydown', (e) => {
+    if(e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); playBtn.click(); return; }
+    if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    ensureAudio();
+    if(!audio.duration || !isFinite(audio.duration)) return;
+    const delta = e.key === 'ArrowLeft' ? 5 : -5;
+    audio.currentTime = Math.max(0, Math.min(audio.duration, audio.currentTime + delta));
+    setPlayedRatio(audio.currentTime / audio.duration);
+    timeLabel.textContent = fmtRemaining(audio.currentTime, audio.duration);
+  });
+  waveform.setAttribute('role', 'slider');
+  waveform.setAttribute('aria-label', 'מיקום בהקלטה');
+
   // מחיקה עכשיו דרך תפריט קליק ימני על הבועה, כמו בוואטסאפ, ולא כפתור קבוע על המסך.
   async function deleteRecording(){
-    const ok = confirm('למחוק את ההקלטה "' + (file.name || '') + '"? הפעולה אינה הפיכה.');
+    const ok = await appConfirm('ההקלטה תימחק מימות המשיח לכל המשתתפים. אי אפשר לבטל את זה.', { title: 'למחוק את ההקלטה?', okText: 'מחיקה', danger: true });
     if(!ok) return;
     bubble.style.opacity = '.5';
     bubble.style.pointerEvents = 'none';
@@ -829,14 +1061,23 @@ function buildRecItem(file, token, ext){
         if(activeAudio === audio){ activeAudio = null; activePlayBtn = null; activeSetPlayed = null; }
         if(waveformDataResult && waveformDataResult.blobUrl) URL.revokeObjectURL(waveformDataResult.blobUrl);
         renderedFileNames.delete(file.name);
+        // אם נשאר מפריד תאריך בלי הודעות אחריו - מסירים גם אותו
+        const prev = row.previousElementSibling;
+        const nextEl = row.nextElementSibling;
         row.remove();
+        if(prev && prev.classList.contains('day-sep') && (!nextEl || nextEl.classList.contains('day-sep'))){
+          prev.remove();
+          lastDayKey = null;
+          const lastRow = Array.from(listEl.querySelectorAll('.rec-row')).pop();
+          if(lastRow) lastDayKey = lastRow._dayKey || null;
+        }
       } else {
-        alert('שגיאה במחיקה: ' + (data.message || data.responseStatus));
+        appAlert('ימות המשיח לא מחקו את ההקלטה: ' + (data.message || data.responseStatus), 'המחיקה נכשלה');
         bubble.style.opacity = '';
         bubble.style.pointerEvents = '';
       }
     }catch(err){
-      alert('שגיאה במחיקה (ייתכן חסימת CORS): ' + err.message);
+      appAlert('אין חיבור לשרת. בדקו את החיבור לאינטרנט ונסו שוב.', 'המחיקה נכשלה');
       bubble.style.opacity = '';
       bubble.style.pointerEvents = '';
     }
@@ -844,6 +1085,20 @@ function buildRecItem(file, token, ext){
   bubble.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     openCtxMenu(e.clientX, e.clientY, deleteRecording);
+  });
+  // לחיצה ארוכה במגע (באייפון אין אירוע contextmenu)
+  let pressTimer = null, pressX = 0, pressY = 0;
+  bubble.addEventListener('pointerdown', (e) => {
+    if(e.pointerType !== 'touch') return;
+    pressX = e.clientX; pressY = e.clientY;
+    clearTimeout(pressTimer);
+    pressTimer = setTimeout(() => { pressTimer = null; openCtxMenu(pressX, pressY, deleteRecording); }, 550);
+  });
+  const cancelPress = () => { clearTimeout(pressTimer); pressTimer = null; };
+  bubble.addEventListener('pointerup', cancelPress);
+  bubble.addEventListener('pointercancel', cancelPress);
+  bubble.addEventListener('pointermove', (e) => {
+    if(pressTimer && (Math.abs(e.clientX - pressX) > 8 || Math.abs(e.clientY - pressY) > 8)) cancelPress();
   });
 
   return row;

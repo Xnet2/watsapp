@@ -11,17 +11,50 @@ let recordStartTime = 0;
 let recordTimerInterval = null;
 let isRecording = false;
 
-micBtn.onclick = async () => {
-  if(!isRecording){
-    await startRecording();
-  } else {
+// לחיצה קצרה מתחילה הקלטה ולחיצה נוספת עוצרת. החזקה ארוכה: מקליטים כל עוד מחזיקים,
+// ושחרור עוצר ופותח את הבדיקה לפני שליחה (כמו בוואטסאפ).
+const HOLD_MS = 350;
+let pressStartedAt = 0;
+let pressing = false;
+let startedByThisPress = false;
+function setHoldUi(on){
+  micBtn.classList.toggle('holding', on);
+  recTimer.classList.toggle('hold', on);
+}
+micBtn.addEventListener('pointerdown', async (e) => {
+  if(e.button !== 0) return;
+  pressing = true;
+  pressStartedAt = Date.now();
+  if(isRecording){ startedByThisPress = false; return; }
+  startedByThisPress = true;
+  try{ micBtn.setPointerCapture(e.pointerId); }catch(err){}
+  setTimeout(() => { if(pressing && isRecording && startedByThisPress) setHoldUi(true); }, HOLD_MS);
+  await startRecording();
+});
+function endPress(){
+  if(!pressing) return;
+  pressing = false;
+  const held = Date.now() - pressStartedAt >= HOLD_MS;
+  if(startedByThisPress){
+    startedByThisPress = false;
+    if(isRecording && held) stopRecording();
+  } else if(isRecording){
     stopRecording();
   }
-};
+  setHoldUi(false);
+}
+micBtn.addEventListener('pointerup', endPress);
+micBtn.addEventListener('pointercancel', endPress);
+micBtn.addEventListener('contextmenu', (e) => e.preventDefault());
+// מקלדת (Enter/רווח) - מפעילה click בלי אירועי pointer
+micBtn.addEventListener('click', (e) => {
+  if(e.detail !== 0) return;
+  if(isRecording) stopRecording(); else startRecording();
+});
 
 async function startRecording(){
   if(!getToken()){
-    alert('נא להזין טוקן בהגדרות לפני הקלטה');
+    appAlert('קודם צריך לחבר מערכת בהגדרות.');
     return;
   }
   try{
@@ -48,7 +81,7 @@ async function startRecording(){
       recTimerText.textContent = mm+':'+ss;
     }, 250);
   }catch(err){
-    alert('לא ניתן לגשת למיקרופון: ' + err.message);
+    appAlert('הדפדפן לא מאפשר גישה למיקרופון. אשרו גישה למיקרופון בהגדרות האתר ונסו שוב.', 'אין גישה למיקרופון');
   }
 }
 
@@ -126,7 +159,7 @@ function closeRecordPreview(){
 previewPlayBtn.onclick = () => {
   if(!previewAudio) return;
   if(previewAudio.paused){
-    previewAudio.play();
+    previewAudio.play().catch(() => {});
     previewPlayBtn.innerHTML = ICON_PAUSE;
   } else {
     previewAudio.pause();
@@ -144,7 +177,7 @@ previewProgress.onclick = (e) => {
   previewAudio.currentTime = ratio * previewAudio.duration;
   previewProgressFill.style.width = (ratio*100) + '%';
   previewTimeLabel.textContent = fmtRemaining(previewAudio.currentTime, previewAudio.duration);
-  if(wasPlaying) previewAudio.play();
+  if(wasPlaying) previewAudio.play().catch(() => {});
 };
 
 previewCancelBtn.onclick = () => {
@@ -222,9 +255,11 @@ function showUploadError(item, statusText, msg, blob){
 async function uploadRecording(blob){
   const token = getToken();
   const ext = getExt();
-  if(!token){ alert('נא להזין טוקן בהגדרות'); return; }
+  if(!token){ appAlert('קודם צריך לחבר מערכת בהגדרות.'); return; }
 
   if(listEl.querySelector('.status-line')) listEl.innerHTML = '';
+  const emptyState = listEl.querySelector('.empty-state');
+  if(emptyState) emptyState.remove();
 
   const item = document.createElement('div');
   item.className = 'rec-item pending';
@@ -278,7 +313,10 @@ async function uploadRecording(blob){
               mine = newFiles.filter(f => f.name === uploadedName || baseName(f.name) === baseName(uploadedName));
             }
             if(mine.length === 0 && newFiles.length === 1) mine = newFiles;
-            for(const f of mine) await saveRecordingAttribution(f.name);
+            for(const f of mine){
+              markPlayed(f.name);
+              await saveRecordingAttribution(f.name);
+            }
           });
         } finally {
           uploadInProgress = false;

@@ -1,9 +1,11 @@
 const ctxMenu = document.getElementById('ctxMenu');
 const ctxDeleteBtn = document.getElementById('ctxDeleteBtn');
 let ctxDeleteHandler = null;
+let ctxOpenedAt = 0;
 
 function openCtxMenu(x, y, onDelete){
   ctxDeleteHandler = onDelete;
+  ctxOpenedAt = Date.now();
   ctxMenu.classList.add('open');
   ctxMenu.style.left = '0px';
   ctxMenu.style.top = '0px';
@@ -24,7 +26,8 @@ ctxDeleteBtn.onclick = () => {
   if(fn) fn();
 };
 document.addEventListener('click', (e) => {
-  if(ctxMenu.classList.contains('open') && !ctxMenu.contains(e.target)) closeCtxMenu();
+  // מתעלמים מהקליק שמגיע מייד אחרי לחיצה ארוכה במגע (אחרת התפריט נסגר ברגע שנפתח)
+  if(ctxMenu.classList.contains('open') && !ctxMenu.contains(e.target) && Date.now() - ctxOpenedAt > 400) closeCtxMenu();
 });
 document.addEventListener('scroll', closeCtxMenu, true);
 window.addEventListener('resize', closeCtxMenu);
@@ -203,4 +206,147 @@ function getToken(){ const s = getActiveSystem(); return (s && s.token) || ''; }
 function getExt(){ const s = getActiveSystem(); return (s && s.ext) || '1'; }
 function getTzintukList(){ const s = getActiveSystem(); return (s && s.tzintukList) || ''; }
 function getTzintukCallerId(){ const s = getActiveSystem(); return (s && s.tzintukCallerId) || ''; }
+
+// ===== חלונות הודעה/אישור בעיצוב האתר (במקום alert/confirm/prompt של הדפדפן) =====
+const dialogOverlay = document.getElementById('dialogOverlay');
+const dialogTitle = document.getElementById('dialogTitle');
+const dialogMsg = document.getElementById('dialogMsg');
+const dialogCopy = document.getElementById('dialogCopy');
+const dialogOk = document.getElementById('dialogOk');
+const dialogCancel = document.getElementById('dialogCancel');
+let dialogResolve = null;
+
+// opts: {title, message, okText, cancelText (null = בלי כפתור ביטול), danger, copyText}
+function appDialog(opts){
+  if(dialogResolve) dialogResolve(false);
+  return new Promise(resolve => {
+    dialogResolve = resolve;
+    dialogTitle.textContent = opts.title || '';
+    dialogTitle.hidden = !opts.title;
+    dialogMsg.textContent = opts.message || '';
+    dialogOk.textContent = opts.okText || 'אישור';
+    dialogOk.classList.toggle('danger-fill', !!opts.danger);
+    dialogCancel.textContent = opts.cancelText || 'ביטול';
+    dialogCancel.hidden = opts.cancelText === null;
+    dialogCopy.hidden = !opts.copyText;
+    dialogCopy.value = opts.copyText || '';
+    dialogOverlay.classList.add('open');
+    if(opts.copyText){ dialogCopy.focus(); dialogCopy.select(); }
+    else dialogOk.focus();
+  });
+}
+function closeDialog(result){
+  dialogOverlay.classList.remove('open');
+  const r = dialogResolve;
+  dialogResolve = null;
+  if(r) r(result);
+}
+dialogOk.onclick = () => closeDialog(true);
+dialogCancel.onclick = () => closeDialog(false);
+
+function appAlert(message, title){
+  return appDialog({ title: title || '', message, okText: 'הבנתי', cancelText: null });
+}
+function appConfirm(message, opts){
+  opts = opts || {};
+  return appDialog({ title: opts.title || '', message, okText: opts.okText || 'אישור', cancelText: 'ביטול', danger: !!opts.danger });
+}
+
+// ממיר שגיאת רשת/שרת להודעה ברורה. fetch שנכשל לגמרי זורק TypeError (אין רשת, חסימה וכו').
+function friendlyError(err){
+  if(err instanceof TypeError){
+    return { msg: 'אין חיבור לשרת. בדקו את החיבור לאינטרנט ונסו שוב.', detail: '' };
+  }
+  const detail = (err && err.message) || '';
+  if(/token|password|login|authoriz|not.?valid|יש להתחבר|סיסמ/i.test(detail)){
+    return { msg: 'ימות המשיח לא אישרו את הכניסה. בדקו את מספר המערכת והסיסמה בהגדרות.', detail };
+  }
+  return { msg: 'לא הצלחנו לטעון את ההקלטות.', detail };
+}
+
+// ===== ערכת צבעים (אוטומטי/בהיר/כהה) - העדפה של המכשיר =====
+const LS_THEME = 'yemot_theme';
+function getTheme(){ const t = localStorage.getItem(LS_THEME); return (t === 'light' || t === 'dark') ? t : 'auto'; }
+function setTheme(t){
+  if(t === 'light' || t === 'dark'){ localStorage.setItem(LS_THEME, t); document.documentElement.dataset.theme = t; }
+  else { localStorage.removeItem(LS_THEME); delete document.documentElement.dataset.theme; }
+}
+
+// ===== התראות דפדפן =====
+const LS_NOTIFY = 'yemot_notify';
+function getNotifyEnabled(){ return localStorage.getItem(LS_NOTIFY) === '1'; }
+function setNotifyEnabled(on){ if(on) localStorage.setItem(LS_NOTIFY, '1'); else localStorage.removeItem(LS_NOTIFY); }
+
+// ===== מהירות ניגון (1x / 1.5x / 2x), משותפת לכל ההודעות =====
+const LS_PLAYBACK_RATE = 'yemot_playback_rate';
+const PLAYBACK_RATES = [1, 1.5, 2];
+function getPlaybackRate(){
+  const r = parseFloat(localStorage.getItem(LS_PLAYBACK_RATE));
+  return PLAYBACK_RATES.includes(r) ? r : 1;
+}
+function cyclePlaybackRate(){
+  const next = PLAYBACK_RATES[(PLAYBACK_RATES.indexOf(getPlaybackRate()) + 1) % PLAYBACK_RATES.length];
+  localStorage.setItem(LS_PLAYBACK_RATE, String(next));
+  return next;
+}
+function fmtRate(r){ return r + 'x'; }
+
+// ===== "נשמעה / עוד לא נשמעה" לכל הודעה (נשמר במכשיר, לכל מערכת בנפרד) =====
+let playedSet = null;
+function playedKey(){ return 'yemot_played:' + (getActiveSystemId() || ''); }
+function loadPlayedSet(){
+  try{
+    const raw = localStorage.getItem(playedKey());
+    playedSet = raw ? new Set(JSON.parse(raw)) : null;
+  }catch(err){ playedSet = null; }
+  return playedSet;
+}
+function savePlayedSet(){
+  if(!playedSet) return;
+  try{ localStorage.setItem(playedKey(), JSON.stringify(Array.from(playedSet).slice(-3000))); }catch(err){}
+}
+function isPlayed(name){ return !playedSet || playedSet.has(name); }
+function markPlayed(name){
+  if(!playedSet) playedSet = new Set();
+  if(playedSet.has(name)) return;
+  playedSet.add(name);
+  savePlayedSet();
+}
+
+// ===== הודעה אחרונה שנראתה בכל מערכת - בשביל מונה "לא נקראו" ברשימת המערכות =====
+function lastSeenKey(id){ return 'yemot_last_seen:' + id; }
+function getLastSeen(id){ return localStorage.getItem(lastSeenKey(id)) || ''; }
+function setLastSeen(id, name){ if(id && name) localStorage.setItem(lastSeenKey(id), name); }
+function countUnread(id, files){
+  const last = getLastSeen(id);
+  if(!last) return 0;
+  const i = files.findIndex(f => f.name === last);
+  return i === -1 ? 0 : files.length - 1 - i;
+}
+
+// ===== תאריכים =====
+// מזהה תאריך (ושעה אם יש) מתוך מחרוזת: dd/mm/yyyy hh:mm או yyyy-mm-dd hh:mm(:ss)
+function parseMsgDate(str){
+  if(!str) return null;
+  const s = String(str);
+  let m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+  if(m) return { date: new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0)), hasTime: m[4] != null };
+  m = s.match(/(\d{4})[-_\/.](\d{1,2})[-_\/.](\d{1,2})(?:[ T_-]+(\d{1,2})[:_-](\d{2}))?/);
+  if(m) return { date: new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0)), hasTime: m[4] != null };
+  return null;
+}
+function dayKeyOf(d){ return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
+const HEB_WEEKDAYS = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'שבת'];
+function pad2(n){ return String(n).padStart(2, '0'); }
+function fmtDateShort(d){ return pad2(d.getDate()) + '.' + pad2(d.getMonth() + 1) + '.' + d.getFullYear(); }
+function fmtClock(d){ return pad2(d.getHours()) + ':' + pad2(d.getMinutes()); }
+function dayLabel(d){
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const that = new Date(d); that.setHours(0, 0, 0, 0);
+  const diff = Math.round((today - that) / 86400000);
+  if(diff === 0) return 'היום';
+  if(diff === 1) return 'אתמול';
+  if(diff > 1 && diff < 7) return HEB_WEEKDAYS[that.getDay()];
+  return fmtDateShort(d);
+}
 

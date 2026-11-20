@@ -1,32 +1,23 @@
-// ===== מסך "רשימת מערכות" (בסגנון רשימת השיחות של וואטסאפ) =====
-// מוצג רק כשמוגדרת יותר ממערכת אחת - כל שורה היא מערכת, עם אווטאר/שם ותצוגה מקדימה
-// של מי שלח את ההודעה האחרונה בה. עם מערכת אחת בלבד נכנסים ישר לתוכה, כמו קודם.
+// ===== רשימת המערכות (בסגנון רשימת השיחות של וואטסאפ) =====
+// בטלפון: מסך נפרד שמוצג כשיש יותר ממערכת אחת (עם מערכת אחת נכנסים ישר לשיחה).
+// במחשב (מסך רחב): מוצגת תמיד בצד, והשיחה הפתוחה לידה.
 const appEl = document.getElementById('app');
 const homeListEl = document.getElementById('homeListEl');
+const homeCountLabel = document.getElementById('homeCountLabel');
 const backHomeBtn = document.getElementById('backHomeBtn');
 const homeAddBtn = document.getElementById('homeAddBtn');
-const refreshBtnEl = document.getElementById('refreshBtn');
-const contactsBtnEl = document.getElementById('contactsBtn');
-const settingsBtnEl = document.getElementById('settingsBtn');
 let inHomeMode = false;
+
+const wideQuery = window.matchMedia('(min-width: 900px)');
+function isWide(){ return wideQuery.matches; }
 
 function updateHeaderForMode(){
   const systems = getSystems();
-  refreshBtnEl.style.display = inHomeMode ? 'none' : 'flex';
-  contactsBtnEl.style.display = inHomeMode ? 'none' : 'flex';
-  settingsBtnEl.style.display = inHomeMode ? 'none' : 'flex';
-  homeAddBtn.style.display = inHomeMode ? 'flex' : 'none';
   backHomeBtn.style.display = (!inHomeMode && systems.length > 1) ? 'flex' : 'none';
-  if(inHomeMode){
-    headerTitle.textContent = 'וואטסאפ פון';
-    extLabel.style.display = '';
-    extLabel.textContent = systems.length + (systems.length === 1 ? ' מערכת מחוברת' : ' מערכות מחוברות');
-  } else {
-    // בתוך שיחה מציגים את שם הקבוצה/המערכת עצמה במקום שם האפליקציה, ומסתירים את שורת
-    // "שלוחה X" - שם המערכת כבר מספיק כדי לזהות באיזו שיחה נמצאים.
-    headerTitle.textContent = systemLabel(getActiveSystem());
-    extLabel.style.display = 'none';
-  }
+  homeCountLabel.textContent = systems.length + (systems.length === 1 ? ' מערכת מחוברת' : ' מערכות מחוברות');
+  const sys = getActiveSystem();
+  headerTitle.textContent = sys ? systemLabel(sys) : 'וואטסאפ פון';
+  document.title = sys ? (systemLabel(sys) + ' · וואטסאפ פון') : 'וואטסאפ פון';
 }
 
 function showHome(){
@@ -41,24 +32,43 @@ function showConversation(){
   updateHeaderForMode();
 }
 // עוברים למערכת נתונה: הופכים אותה לפעילה, עוברים למסך השיחה, וטוענים את אנשי הקשר
-// וההקלטות שלה - בדיוק כמו הטעינה הרגילה בכניסה לאתר.
+// וההקלטות שלה.
 function enterSystem(id){
   setActiveSystemId(id);
   showConversation();
+  closeSearch();
+  refreshSidebar();
   fetchContactsFromServer().then(loadRecordings);
 }
 backHomeBtn.onclick = showHome;
 homeAddBtn.onclick = () => { setActiveSystemId(null); openSettings(); };
 
+// במחשב רשימת המערכות תמיד גלויה - מציירים אותה מחדש אם צריך, אחרת רק מסמנים את הפעילה
+function refreshSidebar(){
+  updateHeaderForMode();
+  if(!isWide() && !inHomeMode) return;
+  const ids = getSystems().map(s => s.id).join(',');
+  if(homeListEl.dataset.ids !== ids) renderHome();
+  else highlightActiveSystemRow();
+}
+function highlightActiveSystemRow(){
+  const activeId = getActiveSystemId();
+  homeListEl.querySelectorAll('.sys-row').forEach(r => r.classList.toggle('active', r.dataset.id === activeId));
+}
+
 // בונה שורת מערכת ברשימה (שלד ראשוני שמוצג מיד, לפני שהתצוגה המקדימה נטענת ברקע).
 function buildSystemRow(sys){
   const row = document.createElement('div');
   row.className = 'sys-row';
+  row.dataset.id = sys.id;
+  row.tabIndex = 0;
+  row.setAttribute('role', 'button');
   row.onclick = () => enterSystem(sys.id);
+  row.onkeydown = (e) => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); enterSystem(sys.id); } };
 
   const avatar = document.createElement('div');
   avatar.className = 'sys-avatar';
-  avatar.innerHTML = ICON_PERSON;
+  avatar.innerHTML = sys.label ? contactAvatarHTML({ name: sys.label }) : ICON_PERSON;
 
   const body = document.createElement('div');
   body.className = 'sys-body';
@@ -69,28 +79,33 @@ function buildSystemRow(sys){
   label.textContent = systemLabel(sys);
   const time = document.createElement('span');
   time.className = 'sys-time';
-  time.textContent = '';
   topRow.appendChild(label);
   topRow.appendChild(time);
 
+  const bottomRow = document.createElement('div');
+  bottomRow.className = 'sys-bottomrow';
   const preview = document.createElement('div');
   preview.className = 'sys-preview';
-  preview.innerHTML = 'טוען הודעה אחרונה…';
+  preview.textContent = 'טוען הודעה אחרונה…';
+  const unread = document.createElement('span');
+  unread.className = 'sys-unread';
+  unread.hidden = true;
+  bottomRow.appendChild(preview);
+  bottomRow.appendChild(unread);
 
   body.appendChild(topRow);
-  body.appendChild(preview);
+  body.appendChild(bottomRow);
   row.appendChild(avatar);
   row.appendChild(body);
 
-  row._avatar = avatar;
   row._time = time;
   row._preview = preview;
+  row._unread = unread;
   return row;
 }
 
 // שולף עבור קובץ הקלטה בודד את פרטי השולח (התאמה לפי מספר טלפון מול רשימת אנשי קשר
-// נתונה) - גרסה עצמאית של אותו היגיון שמופעל בכל הודעה בתוך buildRecItem, כדי שהתצוגה
-// המקדימה ברשימת המערכות תוכל להשתמש בו בלי להיכנס בפועל למערכת ולטעון את כל השיחה.
+// נתונה) - גרסה עצמאית של אותו היגיון שמופעל בכל הודעה בתוך buildRecItem.
 function resolveFileSender(file, contacts){
   const phoneInfo = parsePhoneAndDate(file.name);
   const fallbackPhone = phoneInfo ? null : extractPhoneFallback(file);
@@ -105,12 +120,18 @@ function resolveFileSender(file, contacts){
   return { contact, displayName, dateLabel };
 }
 
+function setRowUnread(row, n){
+  row._unread.hidden = !n;
+  row._unread.textContent = n > 99 ? '99+' : String(n || '');
+  row.classList.toggle('has-unread', !!n);
+}
+
 // טוען ברקע את ההקלטה האחרונה ואת אנשי הקשר של מערכת נתונה, ומעדכן את שורתה ברשימה -
 // לכל מערכת בנפרד ובמקביל, כדי שמערכת איטית/לא זמינה לא תעכב את הצגת האחרות.
 async function loadSystemRowPreview(sys, row){
   try{
     const [files, contacts] = await Promise.all([
-      fetchFileList(sys.token, sys.ext || '1').catch(() => []),
+      fetchFileList(sys.token, sys.ext || '1'),
       (async () => {
         if(!sys.contactsApi) return [];
         try{
@@ -128,23 +149,35 @@ async function loadSystemRowPreview(sys, row){
     const last = files[files.length - 1];
     if(!last){
       row._preview.textContent = 'אין עדיין הודעות';
+      setRowUnread(row, 0);
       return;
     }
+    // נקודת ההתחלה של מונה "לא נקראו": בפעם הראשונה שרואים מערכת, כל מה שקיים נחשב נקרא
+    if(!getLastSeen(sys.id)) setLastSeen(sys.id, last.name);
+    const isOpenNow = sys.id === getActiveSystemId() && !inHomeMode;
+    setRowUnread(row, isOpenNow ? 0 : countUnread(sys.id, files));
+
     const sender = resolveFileSender(last, contacts);
-    row._avatar.innerHTML = contactAvatarHTML(sender.contact || (sender.displayName ? {name: sender.displayName} : null));
     row._preview.innerHTML = ICON_MIC + '<span></span>';
     row._preview.querySelector('span').textContent = sender.displayName;
-    if(sender.dateLabel) row._time.textContent = sender.dateLabel.split(' ')[0];
+    const info = fileDateInfo(last);
+    row._time.textContent = info ? (dayLabel(info.date) === 'היום' && info.hasTime ? fmtClock(info.date) : dayLabel(info.date)) : '';
   }catch(err){
-    row._preview.textContent = 'שגיאה בטעינת המערכת';
+    row._preview.textContent = 'לא הצלחנו לטעון את המערכת';
   }
 }
 
 function renderHome(){
   const systems = getSystems();
   homeListEl.innerHTML = '';
+  homeListEl.dataset.ids = systems.map(s => s.id).join(',');
+  updateHeaderForMode();
   if(systems.length === 0){
-    openSettings();
+    const empty = document.createElement('div');
+    empty.className = 'home-empty';
+    empty.textContent = 'עוד לא חיברתם מערכת. לחצו על + כדי להתחיל.';
+    homeListEl.appendChild(empty);
+    if(!settingsOverlay.classList.contains('open')) openSettings();
     return;
   }
   systems.forEach(sys => {
@@ -152,13 +185,39 @@ function renderHome(){
     homeListEl.appendChild(row);
     loadSystemRowPreview(sys, row);
   });
+  highlightActiveSystemRow();
 }
+
+// מעדכן את השורה של מערכת אחת (למשל אחרי שנכנסו אליה, כדי לאפס את מונה "לא נקראו")
+function refreshHomeRow(id){
+  const row = homeListEl.querySelector('.sys-row[data-id="' + id + '"]');
+  const sys = getSystems().find(s => s.id === id);
+  if(row && sys) loadSystemRowPreview(sys, row);
+}
+
+// רענון שקט של רשימת המערכות פעם בדקה, כשהיא גלויה (במחשב תמיד, בטלפון במסך הרשימה)
+setInterval(() => {
+  if(document.hidden) return;
+  if(!isWide() && !inHomeMode) return;
+  homeListEl.querySelectorAll('.sys-row').forEach(row => {
+    const sys = getSystems().find(s => s.id === row.dataset.id);
+    if(sys && !(sys.id === getActiveSystemId() && !inHomeMode)) loadSystemRowPreview(sys, row);
+  });
+}, 60000);
+
+// מעבר בין פריסת טלפון למחשב (סיבוב טאבלט, שינוי גודל חלון)
+wideQuery.addEventListener('change', () => {
+  if(isWide()){
+    if(inHomeMode && getActiveSystemId()) showConversation();
+    refreshSidebar();
+  }
+});
 
 // ===== צינתוק לרשימת מנויים בהקלטה חדשה =====
 // שולח שיחת צינתוק לכל המספרים הרשומים ברשימת צינתוקים (ניהול רשימות צינתוקים
 // במודול צינתוקים חינמיים בימות המשיח), דרך פקודת RunTzintuk. הפרמטר phones=tzl:<מספר הרשימה>
-// אומר לימות המשיח לשלוף בעצמו את כל המספרים המנויים לאותה רשימה ולצנתק את כולם -
-// אין צורך לשלוף את המספרים בצד שלנו, ימות המשיח עושה את זה מולם.
+// אומר לימות המשיח לשלוף בעצמו את כל המספרים המנויים לאותה רשימה ולצנתק את כולם.
+
 // האם המכשיר הזה שולח צינתוק כשמגיעה הודעה חדשה מהטלפון (ולא מהאתר). בעבר כל מכשיר
 // שהאתר היה פתוח בו צנתק - כך שעם כמה אנשים פתוחים הרשימה קיבלה כמה צינתוקים על אותה
 // הודעה. עכשיו זו הגדרה לכל מכשיר: כברירת מחדל פעילה רק אצל מי שהגדיר את המערכת
@@ -202,7 +261,6 @@ async function sendTzintuk(dedupeKey){
       console.warn('שליחת הצינתוק לרשימה נכשלה:', data.message || data.responseStatus);
     }
   }catch(err){
-    console.warn('שגיאה בשליחת הצינתוק לרשימה (ייתכן חסימת CORS):', err.message);
+    console.warn('שגיאה בשליחת הצינתוק לרשימה:', err.message);
   }
 }
-

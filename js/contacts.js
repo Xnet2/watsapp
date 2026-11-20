@@ -281,6 +281,7 @@ function refreshAvatarPreview(){
 
 document.getElementById('contactsBtn').onclick = openContacts;
 document.getElementById('closeContactsBtn').onclick = closeContacts;
+document.getElementById('contactsCloseX').onclick = closeContacts;
 document.getElementById('addContactBtn').onclick = () => openContactEdit(null);
 document.getElementById('cancelContactEditBtn').onclick = closeContactEdit;
 avatarPickBtn.onclick = () => contactPhotoInput.click();
@@ -291,8 +292,8 @@ const saveContactBtn = document.getElementById('saveContactBtn');
 saveContactBtn.onclick = async () => {
   const name = contactNameInput.value.trim();
   const phone = contactPhoneInput.value.trim();
-  if(!name){ alert('נא להזין שם'); return; }
-  if(!phone){ alert('נא להזין מספר טלפון'); return; }
+  if(!name){ appAlert('נא להזין שם.'); return; }
+  if(!phone){ appAlert('נא להזין מספר טלפון.'); return; }
   const id = editingContactId || ((window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'c' + Date.now() + Math.random().toString(16).slice(2));
   const contact = { id, name, phone, photo: pendingAvatarPhoto || '' };
   saveContactBtn.disabled = true;
@@ -303,7 +304,7 @@ saveContactBtn.onclick = async () => {
     closeContactEdit();
     loadRecordings();
   }catch(err){
-    alert('שגיאה בשמירת איש הקשר: ' + err.message);
+    appAlert(err instanceof TypeError ? 'אין חיבור לשרת. בדקו את החיבור לאינטרנט ונסו שוב.' : err.message, 'איש הקשר לא נשמר');
   }finally{
     saveContactBtn.disabled = false;
     saveContactBtn.textContent = 'שמירה';
@@ -312,7 +313,7 @@ saveContactBtn.onclick = async () => {
 
 deleteContactBtn.onclick = async () => {
   if(!editingContactId) return;
-  const ok = confirm('למחוק את איש הקשר?');
+  const ok = await appConfirm('איש הקשר יימחק מהגיליון לכל מי שמחובר למערכת הזו.', { title: 'למחוק את איש הקשר?', okText: 'מחיקה', danger: true });
   if(!ok) return;
   try{
     await deleteContactFromServer(editingContactId);
@@ -320,7 +321,7 @@ deleteContactBtn.onclick = async () => {
     closeContactEdit();
     loadRecordings();
   }catch(err){
-    alert('שגיאה במחיקת איש הקשר: ' + err.message);
+    appAlert(err instanceof TypeError ? 'אין חיבור לשרת. בדקו את החיבור לאינטרנט ונסו שוב.' : err.message, 'איש הקשר לא נמחק');
   }
 };
 
@@ -422,7 +423,7 @@ cropConfirmBtn.onclick = () => {
       closeCropper();
       contactPhotoInput.value = '';
     }catch(err){
-      alert('שגיאה בהעלאת התמונה: ' + err.message);
+      appAlert('לא הצלחנו להעלות את התמונה. נסו שוב בעוד רגע.', 'התמונה לא הועלתה');
     }finally{
       cropConfirmBtn.disabled = false;
       cropConfirmBtn.textContent = 'אישור חיתוך';
