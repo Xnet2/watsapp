@@ -159,11 +159,39 @@ function renderHome(){
 // במודול צינתוקים חינמיים בימות המשיח), דרך פקודת RunTzintuk. הפרמטר phones=tzl:<מספר הרשימה>
 // אומר לימות המשיח לשלוף בעצמו את כל המספרים המנויים לאותה רשימה ולצנתק את כולם -
 // אין צורך לשלוף את המספרים בצד שלנו, ימות המשיח עושה את זה מולם.
-async function sendTzintuk(){
+// האם המכשיר הזה שולח צינתוק כשמגיעה הודעה חדשה מהטלפון (ולא מהאתר). בעבר כל מכשיר
+// שהאתר היה פתוח בו צנתק - כך שעם כמה אנשים פתוחים הרשימה קיבלה כמה צינתוקים על אותה
+// הודעה. עכשיו זו הגדרה לכל מכשיר: כברירת מחדל פעילה רק אצל מי שהגדיר את המערכת
+// (ולא אצל מי שהצטרף בקישור הזמנה), וניתנת לשינוי בהגדרות.
+function tzIncomingKey(id){ return 'yemot_tz_incoming:' + id; }
+function getTzIncoming(sys){
+  if(!sys) return true;
+  const v = localStorage.getItem(tzIncomingKey(sys.id));
+  if(v === null) return !sys.invited;
+  return v === '1';
+}
+function setTzIncoming(id, on){
+  if(id) localStorage.setItem(tzIncomingKey(id), on ? '1' : '0');
+}
+
+// מונע צינתוק כפול על אותה הודעה כשהאתר פתוח בכמה לשוניות באותו דפדפן.
+const LS_TZ_SENT = 'yemot_tz_sent';
+function claimTzintuk(key){
+  let sent = [];
+  try{ sent = JSON.parse(localStorage.getItem(LS_TZ_SENT) || '[]'); }catch(err){}
+  if(sent.includes(key)) return false;
+  sent.push(key);
+  try{ localStorage.setItem(LS_TZ_SENT, JSON.stringify(sent.slice(-200))); }catch(err){}
+  return true;
+}
+
+// dedupeKey (אופציונלי) - מזהה ההודעה שבגללה מצנתקים; אם כבר צונתק עליה מהדפדפן הזה, מדלגים.
+async function sendTzintuk(dedupeKey){
   const list = getTzintukList();
   if(!list) return;
   const token = getToken();
   if(!token) return;
+  if(dedupeKey && !claimTzintuk(dedupeKey)) return;
   const params = new URLSearchParams({ token, phones: 'tzl:' + list });
   const callerId = getTzintukCallerId();
   if(callerId) params.set('callerId', callerId);

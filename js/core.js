@@ -79,6 +79,19 @@ function b64UrlDecode(b64url){
   return decodeURIComponent(escape(atob(b64)));
 }
 
+// מניעת הזרקת קוד: כל טקסט שמגיע מבחוץ (גיליון אנשי הקשר המשותף, שמות קבצים) ונכנס
+// ל-innerHTML עובר דרך escapeHtml, וכתובות תמונה עוברות דרך safeImageUrl.
+function escapeHtml(str){
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function safeImageUrl(url){
+  const u = String(url || '').trim();
+  if(/^https?:\/\//i.test(u) || /^data:image\//i.test(u)) return u;
+  return '';
+}
+
 function getSystems(){
   try{ return JSON.parse(localStorage.getItem(LS_SYSTEMS) || '[]'); }catch(err){ return []; }
 }

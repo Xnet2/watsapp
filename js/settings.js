@@ -64,9 +64,11 @@ function openSettings(){
   // מפתח ה-API לתמלול הוא גלובלי לדפדפן ולא חלק ממערכת ספציפית - נטען תמיד מאותו מקום,
   // גם במסך "עריכת מערכת" של קבוצה שהצטרפו אליה דרך הזמנה (invited), כי הוא לא חלק מהזמנה.
   speechApiKeyInput.value = getSpeechApiKey();
+  tzIncomingInput.checked = getTzIncoming(sys);
 
   invitedNotice.style.display = invited ? 'flex' : 'none';
   inviteLinkBtn.style.display = (sys && !invited) ? 'flex' : 'none';
+  inviteHint.style.display = (sys && !invited) ? 'block' : 'none';
   deleteSystemBtn.style.display = sys ? 'inline-block' : 'none';
   settingsTitle.textContent = sys ? (invited ? 'הקבוצה שלי' : 'עריכת מערכת') : 'חיבור מערכת חדשה';
   renderSettingsSystemsList();
@@ -80,11 +82,17 @@ function closeSettings(){ settingsOverlay.classList.remove('open'); }
 // בלי להציג לו בשום שלב את הטוקן/הקישורים/שאר הפרטים - לא בשדה בטופס, לא ב-alert
 // ולא ב-console. הפרטים מקודדים (לא מוצפנים באמת! ר' הערה למטה) בפרמטר קצר בכתובת,
 // ומיד עם הטעינה (ר' applyInviteLinkIfPresent) נמחקים מהכתובת בשורת הכתובת של הדפדפן.
+// חשוב: זה קידוד ולא הצפנה. כל מי שמחזיק בקישור יכול לפענח ממנו את הטוקן (סיסמת הניהול)
+// ולקבל גישה מלאה למערכת - לכן מוצגת אזהרה ליד הכפתור ומבקשים אישור לפני ההעתקה.
 const INVITE_PARAM = 'j';
 const inviteLinkBtn = document.getElementById('inviteLinkBtn');
+const inviteHint = document.getElementById('inviteHint');
+const tzIncomingInput = document.getElementById('tzIncomingInput');
 inviteLinkBtn.onclick = async () => {
   const sys = getActiveSystem();
   if(!sys){ return; }
+  const ok = confirm('מי שיקבל את הקישור יוכל להאזין, לשלוח ולמחוק הקלטות במערכת הזו ולשלוח צינתוקים. ליצור את הקישור?');
+  if(!ok) return;
   const payload = {
     label: sys.label || '',
     token: sys.token || '',
@@ -166,6 +174,7 @@ document.getElementById('saveSettingsBtn').onclick = () => {
     // מערכת שהצטרפו אליה דרך קישור הזמנה: השדות הרגישים נעולים ומוצגים ממוסכים (ר' openSettings),
     // כך שאין להם ערך אמיתי לשמור כאן - מרשים לשנות רק את שם התצוגה המקומי.
     upsertActiveSystem({ label: labelInput.value.trim() });
+    setTzIncoming(sys.id, tzIncomingInput.checked);
     closeSettings();
     fetchContactsFromServer().then(loadRecordings);
     return;
@@ -173,7 +182,7 @@ document.getElementById('saveSettingsBtn').onclick = () => {
   const t = tokenInput.value.trim();
   const e = extInput.value.trim() || '1';
   if(!t){ alert('נא להזין טוקן'); return; }
-  upsertActiveSystem({
+  const savedSys = upsertActiveSystem({
     token: t,
     ext: e,
     label: labelInput.value.trim(),
@@ -181,6 +190,7 @@ document.getElementById('saveSettingsBtn').onclick = () => {
     contactsApi: contactsApiInput.value.trim(),
     contactsSource: contactsSourceInput.value
   });
+  setTzIncoming(savedSys.id, tzIncomingInput.checked);
   closeSettings();
   fetchContactsFromServer().then(loadRecordings);
 };

@@ -176,6 +176,49 @@ function buildUploadFileName(audioExt){
   return 'recording-' + dateStr + '.' + audioExt;
 }
 
+// סיומת קובץ לפי סוג ההקלטה בפועל. ספארי (אייפון/מק) מקליט mp4/aac ולא webm, וקובץ
+// שנשלח עם סיומת לא נכונה עלול להיכשל בהמרה בצד של ימות המשיח.
+function audioExtForType(type){
+  const t = String(type || '').toLowerCase();
+  if(t.includes('wav')) return 'wav';
+  if(t.includes('mpeg') || t.includes('mp3')) return 'mp3';
+  if(t.includes('mp4') || t.includes('aac') || t.includes('m4a')) return 'm4a';
+  if(t.includes('ogg')) return 'ogg';
+  return 'webm';
+}
+
+// מנסה לזהות מתשובת UploadFile את שם הקובץ שימות המשיח נתנה להקלטה (בגלל autoNumbering).
+function uploadedNameFrom(data){
+  for(const key of ['path', 'filePath', 'file', 'fileName', 'name']){
+    const v = data && data[key];
+    if(typeof v === 'string' && v) return v.split('/').pop();
+  }
+  return '';
+}
+function baseName(name){ return String(name || '').replace(/\.[^.]+$/, ''); }
+
+// הודעת שגיאה בהעלאה עם אפשרות לנסות שוב (ההקלטה נשמרת בזיכרון עד שמבטלים).
+function showUploadError(item, statusText, msg, blob){
+  item.classList.add('error-item');
+  statusText.className = 'status-text error';
+  statusText.textContent = msg;
+  const actions = document.createElement('div');
+  actions.className = 'upload-actions';
+  const retry = document.createElement('button');
+  retry.type = 'button';
+  retry.className = 'linklike';
+  retry.textContent = 'לנסות שוב';
+  retry.onclick = () => { item.remove(); uploadRecording(blob); };
+  const cancel = document.createElement('button');
+  cancel.type = 'button';
+  cancel.className = 'linklike danger';
+  cancel.textContent = 'ביטול';
+  cancel.onclick = () => item.remove();
+  actions.appendChild(retry);
+  actions.appendChild(cancel);
+  item.appendChild(actions);
+}
+
 async function uploadRecording(blob){
   const token = getToken();
   const ext = getExt();
@@ -194,9 +237,7 @@ async function uploadRecording(blob){
 
   uploadInProgress = true;
 
-  const guessedExt = (blob.type && blob.type.includes('wav')) ? 'wav'
-                    : (blob.type && blob.type.includes('mp3')) ? 'mp3'
-                    : 'webm';
+  const guessedExt = audioExtForType(blob.type);
   const fileName = buildUploadFileName(guessedExt);
 
   // חשוב: בעבר הועלה כאן עם autoNumbering=false ושם קובץ מיוחד (Phone-...-Date-...), כדי
@@ -217,6 +258,7 @@ async function uploadRecording(blob){
     const res = await fetch(BASE_URL + 'UploadFile', {method:'POST', body: form});
     const data = await res.json();
     if(data.responseStatus === 'OK'){
+      const uploadedName = uploadedNameFrom(data);
       statusText.innerHTML = ICON_CHECK + ' נשלח בהצלחה';
       statusText.style.display = 'flex';
       statusText.style.alignItems = 'center';
@@ -229,7 +271,14 @@ async function uploadRecording(blob){
         item.remove();
         try{
           await appendNewRecordings(async (newFiles) => {
-            for(const f of newFiles) await saveRecordingAttribution(f.name);
+            // משייכים רק את הקובץ שהעלינו בפועל. בעבר שויכו *כל* הקבצים החדשים - כך שהודעה
+            // של מישהו אחר שנכנסה באותן שניות סומנה בטעות כשלי.
+            let mine = [];
+            if(uploadedName){
+              mine = newFiles.filter(f => f.name === uploadedName || baseName(f.name) === baseName(uploadedName));
+            }
+            if(mine.length === 0 && newFiles.length === 1) mine = newFiles;
+            for(const f of mine) await saveRecordingAttribution(f.name);
           });
         } finally {
           uploadInProgress = false;
@@ -237,15 +286,11 @@ async function uploadRecording(blob){
       }, 650);
     } else {
       uploadInProgress = false;
-      item.classList.add('error-item');
-      statusText.className = 'status-text error';
-      statusText.textContent = 'שגיאה בהעלאה: ' + (data.message || data.responseStatus);
+      showUploadError(item, statusText, 'ההקלטה לא נשלחה: ' + (data.message || data.responseStatus), blob);
     }
   }catch(err){
     uploadInProgress = false;
-    item.classList.add('error-item');
-    statusText.className = 'status-text error';
-    statusText.textContent = 'שגיאה בהעלאה (ייתכן חסימת CORS): ' + err.message;
+    showUploadError(item, statusText, 'ההקלטה לא נשלחה - בדקו את החיבור לאינטרנט.', blob);
   }
 }
 

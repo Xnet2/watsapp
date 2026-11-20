@@ -150,9 +150,14 @@ async function fetchFileList(token, ext){
   return files;
 }
 
+// מונה טעינות: כל טעינה מלאה מעלה אותו, וכל פעולה אסינכרונית בודקת בסופה שהוא לא השתנה -
+// כך תוצאה של מערכת קודמת (מעבר מהיר בין מערכות) לא נכנסת לרשימה של המערכת הנוכחית.
+let listGeneration = 0;
+
 async function loadRecordings(){
   const token = getToken();
   const ext = getExt();
+  const gen = ++listGeneration;
   headerTitle.textContent = systemLabel(getActiveSystem());
 
   if(!token){
@@ -166,6 +171,7 @@ async function loadRecordings(){
   try{
     files = await fetchFileList(token, ext);
   }catch(err){
+    if(gen !== listGeneration) return;
     setStatus(
       'שגיאה בטעינת ההקלטות.\n' +
       'ייתכן שזו חסימת CORS של שרת ימות המשיח, או בעיית רשת.\n' +
@@ -174,6 +180,7 @@ async function loadRecordings(){
     );
     return;
   }
+  if(gen !== listGeneration) return;
 
   if(files.length === 0){
     setStatus('אין הקלטות להצגה בשלוחה ' + ext + '.');
@@ -200,7 +207,9 @@ async function appendNewRecordings(onNewFiles){
   const token = getToken();
   const ext = getExt();
   if(!token) return [];
+  const gen = listGeneration;
   const files = await fetchFileList(token, ext);
+  if(gen !== listGeneration) return [];
   const newFiles = files.filter(f => !renderedFileNames.has(f.name));
   if(newFiles.length === 0) return newFiles;
 
@@ -215,6 +224,7 @@ async function appendNewRecordings(onNewFiles){
   // מחדש של הדף, וההקלטה הייתה מוצגת כ"לא מזוהה" עד אז.
   try{ await fetchContactsFromServer(); }
   catch(err){ console.warn('שגיאה ברענון אנשי קשר/שיוכים:', err.message); }
+  if(gen !== listGeneration) return [];
 
   const wasAtBottom = (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) < 40;
 
@@ -235,6 +245,7 @@ async function appendNewRecordings(onNewFiles){
 async function pollForNewRecordings(){
   if(isPolling) return;
   if(uploadInProgress) return;
+  if(inHomeMode) return; // במסך רשימת המערכות אין שיחה פתוחה לעדכן
   const token = getToken();
   if(!token) return;
   if(listEl.querySelector('.status-line')) return; // עוד לא נטענה רשימה בהצלחה בפעם הראשונה
@@ -244,10 +255,14 @@ async function pollForNewRecordings(){
     const newFiles = await appendNewRecordings();
     if(newFiles.length === 0) return;
 
-    // הקלטות שהתגלו כאן הגיעו ממקור חיצוני (למשל שיחה ישירה לשלוחה), ולא דרך
-    // uploadRecording של האתר הזה - משמיעים צליל כניסת הודעה חדשה (שני טונים) ומצנתקים.
+    // הקלטות שהתגלו כאן לא הועלו מהדפדפן הזה - משמיעים צליל כניסת הודעה חדשה (שני טונים).
     playChime();
-    sendTzintuk();
+    // צינתוק רק על הודעות שהגיעו מהטלפון: הודעה שהועלתה מהאתר (יש לה שיוך שולח) כבר
+    // צונתקה ע"י המכשיר ששלח אותה. ורק אם המכשיר הזה מוגדר לצנתק על הודעות נכנסות.
+    const fromPhone = newFiles.filter(f => !getRecordingAttribution(f.name));
+    if(fromPhone.length && getTzIncoming(getActiveSystem())){
+      sendTzintuk(getActiveSystemId() + '|' + fromPhone[fromPhone.length - 1].name);
+    }
   }catch(err){
     // כשל שקט - לא מציגים שגיאה כדי לא להפריע לצפייה, פשוט מנסים שוב בבדיקה הבאה
     console.warn('בדיקת הקלטות חדשות נכשלה:', err.message);
@@ -256,7 +271,20 @@ async function pollForNewRecordings(){
   }
 }
 
-setInterval(pollForNewRecordings, 8000);
+// בדיקה כל 8 שניות כשהלשונית גלויה, וכל 30 שניות כשהיא ברקע (מספיק כדי לצלצל/להתריע,
+// בלי להעמיס על השרת). כשחוזרים ללשונית - בודקים מייד.
+const POLL_VISIBLE_MS = 8000;
+const POLL_HIDDEN_MS = 30000;
+let pollTimer = null;
+function schedulePoll(delay){
+  clearTimeout(pollTimer);
+  const wait = (delay != null) ? delay : (document.hidden ? POLL_HIDDEN_MS : POLL_VISIBLE_MS);
+  pollTimer = setTimeout(async () => {
+    try{ await pollForNewRecordings(); } finally { schedulePoll(); }
+  }, wait);
+}
+document.addEventListener('visibilitychange', () => { if(!document.hidden) schedulePoll(300); });
+schedulePoll();
 
 // ===== גל קול =====
 function getAudioCtx(){

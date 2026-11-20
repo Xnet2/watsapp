@@ -104,6 +104,11 @@
 
     <label for="tzintukListInput">שם רשימת צינתוקים</label>
     <input type="text" id="tzintukListInput" placeholder="אופציונלי" dir="ltr">
+    <label class="me-toggle-row" for="tzIncomingInput">
+      <input type="checkbox" id="tzIncomingInput">
+      <span>במכשיר הזה: לצנתק גם כשמגיעה הודעה מהטלפון</span>
+    </label>
+    <div class="hint">כדאי להפעיל במכשיר אחד בלבד, אחרת הרשימה תקבל כמה צינתוקים על אותה הודעה. הודעה שנשלחת מהאתר תמיד מצנתקת מהמכשיר ששלח אותה.</div>
 
     <label for="contactsSourceInput">מקור אנשי קשר</label>
     <select id="contactsSourceInput">
@@ -133,6 +138,7 @@
         <span>קישור שנכנס ישירות למערכת הזו, בלי להזין ובלי להציג את פרטי החיבור</span>
       </span>
     </button>
+    <div class="hint invite-hint" id="inviteHint" style="display:none;">שימו לב: הקישור כולל את פרטי הכניסה למערכת (רק מקודדים, לא מוצפנים). מי שמקבל אותו יכול להאזין, לשלוח ולמחוק הקלטות ולשלוח צינתוקים. שלחו אותו רק לאנשים שאתם סומכים עליהם.</div>
   </div>
 </div>
 

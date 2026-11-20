@@ -47,6 +47,7 @@ function getContacts(){ return contactsCache; }
 // עמודות בגיליון (שתי השיטות): SystemKey | ContactId | Name | Phone | PhotoUrl | UpdatedAt
 async function fetchContactsFromServer(){
   const token = getToken();
+  const sysIdAtStart = getActiveSystemId();
   const apiUrl = getContactsApiUrl();
   const source = getContactsSource();
   if(!token || !apiUrl){ contactsCache = []; recAttributionCache = []; return contactsCache; }
@@ -56,6 +57,8 @@ async function fetchContactsFromServer(){
       : apiUrl + '/search?SystemKey=' + encodeURIComponent(token);
     const res = await fetch(url);
     const rows = await res.json();
+    // אם בזמן ההמתנה עברו למערכת אחרת - לא דורסים את אנשי הקשר שלה באלה של הקודמת
+    if(sysIdAtStart !== getActiveSystemId()) return contactsCache;
     const all = Array.isArray(rows) ? rows : [];
     contactsCache = all
       .filter(r => !String(r.ContactId||'').startsWith('rec:'))
@@ -200,11 +203,11 @@ function initialsFor(name){
   return parts.length === 1 ? parts[0][0] : (parts[0][0] + parts[parts.length-1][0]);
 }
 function contactAvatarHTML(contact){
-  if(contact && contact.photo) return '<img src="' + contact.photo + '" alt="">';
+  const photo = contact ? safeImageUrl(contact.photo) : '';
+  if(photo) return '<img src="' + escapeHtml(photo) + '" alt="">';
   if(contact && contact.name){
-    const color = avatarColorFor(contact.name);
-    return '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;' +
-      'background:' + color + ';color:#fff;font-weight:600;font-size:.85rem;">' + initialsFor(contact.name) + '</div>';
+    const color = avatarColorFor(String(contact.name));
+    return '<div class="initials-avatar" style="background:' + color + ';">' + escapeHtml(initialsFor(contact.name)) + '</div>';
   }
   return ICON_PERSON;
 }

@@ -133,7 +133,8 @@ header button.icon svg{width:17px;height:17px;}
   box-shadow:0 1px 1px rgba(0,0,0,.08);
 }
 .rec-item.pending{box-shadow:0 0 0 2px var(--accent) inset;}
-.rec-item.error-item{background:#FFF5F5;}
+.rec-item.error-item{background:#FFF5F5;flex-wrap:wrap;}
+.upload-actions{display:flex;gap:12px;margin-inline-start:auto;}
 
 /* שורת הודעה: עמודה עם בועת ההודעה הקולית בלבד. גודל הבועה קבוע לכל ההודעות. */
 .rec-row{display:flex;align-items:flex-start;gap:5px;max-width:94%;align-self:flex-start;}
@@ -242,6 +243,10 @@ header button.icon svg{width:17px;height:17px;}
 }
 .voice-avatar-img img{width:100%;height:100%;object-fit:cover;display:block;}
 .voice-avatar-img svg{width:16px;height:16px;}
+.initials-avatar{
+  width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:600;font-size:.85rem;
+}
 /* התג יושב על הפינה הפנימית של התמונה, פונה לכיוון כפתור הנגן/הגל */
 .voice-avatar-badge{
   position:absolute;bottom:-2px;left:-2px;
